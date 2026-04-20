@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#1A1A2E"/>
+  <!-- Casa -->
+  <polygon points="256,100 100,240 140,240 140,400 220,400 220,300 292,300 292,400 372,400 372,240 412,240" fill="#FFFFFF"/>
+  <!-- Detalhe porta -->
+  <rect x="228" y="320" width="56" height="80" rx="8" fill="#1A1A2E"/>
+  <!-- Coração no topo -->
+  <path d="M256 86 C256 86 236 66 220 66 C204 66 192 78 192 94 C192 126 256 150 256 150 C256 150 320 126 320 94 C320 78 308 66 292 66 C276 66 256 86 256 86Z" fill="#E53935"/>
+</svg>

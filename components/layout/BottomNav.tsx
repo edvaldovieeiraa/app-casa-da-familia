@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { MODULES } from "@/lib/modules";
 
 const NAV_MODULE_IDS = ["imoveis", "tarefas", "veiculos", "familia", "pets"];
@@ -20,7 +20,7 @@ interface NavItem {
 const HOME_ITEM: NavItem = {
   id: "home",
   label: "Início",
-  color: "#1A1A2E",
+  color: "#9C27B0",
   href: "/",
   Icon: Home,
 };
@@ -41,13 +41,15 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 flex safe-area-pb"
+      className="fixed bottom-0 left-0 right-0 z-40 flex items-stretch"
       style={{
-        background: "rgba(255,255,255,0.88)",
-        backdropFilter: "blur(20px) saturate(180%)",
-        WebkitBackdropFilter: "blur(20px) saturate(180%)",
-        borderTop: "1px solid rgba(0,0,0,0.06)",
-        boxShadow: "0 -4px 20px rgba(0,0,0,0.06)",
+        background: "rgba(15, 15, 26, 0.92)",
+        backdropFilter: "blur(30px) saturate(200%)",
+        WebkitBackdropFilter: "blur(30px) saturate(200%)",
+        borderTop: "1px solid rgba(255,255,255,0.08)",
+        boxShadow: "0 -4px 24px rgba(0,0,0,0.4)",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        minHeight: 64,
       }}
     >
       {items.map(({ id, label, color, href, Icon }) => {
@@ -58,34 +60,63 @@ export function BottomNav() {
             key={id}
             href={href}
             aria-label={label}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-h-[60px]"
+            className="flex-1 flex flex-col items-center justify-center py-2"
           >
-            {/* Pill indicator */}
             <motion.div
               animate={{
-                backgroundColor: isActive ? `${color}18` : "transparent",
-                scale: isActive ? 1 : 0.85,
+                y: isActive ? -2 : 0,
               }}
-              transition={{ type: "spring", damping: 20, stiffness: 300 }}
-              className="w-12 h-8 rounded-full flex items-center justify-center"
+              transition={{ type: "spring", damping: 18, stiffness: 280 }}
+              className="flex flex-col items-center gap-1"
             >
-              <motion.div
-                animate={{ scale: isActive ? 1.1 : 1 }}
-                transition={{ type: "spring", damping: 20, stiffness: 300 }}
-              >
+              {/* Pill background for active */}
+              <div className="relative flex items-center justify-center">
+                <AnimatePresence>
+                  {isActive && (
+                    <motion.div
+                      key="pill"
+                      initial={{ opacity: 0, scale: 0.7 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.7 }}
+                      transition={{ type: "spring", damping: 20, stiffness: 320 }}
+                      className="absolute inset-0 rounded-[12px]"
+                      style={{
+                        background: `${color}28`,
+                        border: `1px solid ${color}40`,
+                        padding: "6px 16px",
+                        inset: "-6px -12px",
+                      }}
+                    />
+                  )}
+                </AnimatePresence>
                 <Icon
                   size={22}
-                  style={{ color: isActive ? color : "#9CA3AF" }}
+                  style={{
+                    color: isActive ? color : "rgba(240,240,255,0.38)",
+                    position: "relative",
+                    zIndex: 1,
+                    transition: "color 0.2s ease",
+                  }}
                 />
-              </motion.div>
-            </motion.div>
+              </div>
 
-            <span
-              className="text-[9px] font-700 leading-tight tracking-wide"
-              style={{ color: isActive ? color : "#9CA3AF" }}
-            >
-              {label}
-            </span>
+              {/* Label only for active */}
+              <AnimatePresence>
+                {isActive && (
+                  <motion.span
+                    key="label"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 4 }}
+                    transition={{ duration: 0.18 }}
+                    className="text-[9px] font-700 leading-none tracking-wide"
+                    style={{ color }}
+                  >
+                    {label}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.div>
           </Link>
         );
       })}

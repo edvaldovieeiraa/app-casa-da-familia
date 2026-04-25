@@ -6,3 +6,4 @@ export { ToastContainer } from "./Toast";
 export { EmptyState } from "./EmptyState";
 export { Skeleton } from "./Skeleton";
 export { CopyButton, CopyField } from "./CopyButton";
+export { Badge } from "./Badge";

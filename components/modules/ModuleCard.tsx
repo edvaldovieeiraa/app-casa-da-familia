@@ -3,16 +3,9 @@
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
 import {
-  Building2,
-  FileText,
-  Users,
-  Users2,
-  ShoppingCart,
-  Wallet,
-  Settings,
-  PawPrint,
-  Car,
-  ClipboardList,
+  Building2, FileText, Users, Users2,
+  ShoppingCart, Wallet, Settings, PawPrint,
+  Car, ClipboardList,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -41,68 +34,63 @@ export interface ModuleCardProps {
 }
 
 const shineVariants: Variants = {
-  rest: { x: "-120%", skewX: -12 },
+  rest: { x: "-120%", skewX: -12, opacity: 0 },
   hover: {
     x: "320%",
     skewX: -12,
+    opacity: 1,
     transition: { duration: 0.55, ease: [0.25, 0.1, 0.25, 1] },
   },
 };
 
-export function ModuleCard({
-  id,
-  label,
-  color,
-  gradient,
-  textColor,
-  href,
-  count,
-  index,
-}: ModuleCardProps) {
+export function ModuleCard({ id, label, color, gradient, href, count, index }: ModuleCardProps) {
   const Icon = ICON_MAP[id] ?? Building2;
 
-  const bgStyle = gradient
-    ? { background: gradient }
-    : { background: `linear-gradient(135deg, ${color} 0%, ${color}CC 100%)` };
+  const cardGradient = gradient ?? `linear-gradient(135deg, ${color}28 0%, ${color}0F 100%)`;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.055, type: "spring", damping: 20, stiffness: 220 }}
+      initial={{ opacity: 0, y: 20, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay: index * 0.06, type: "spring", damping: 22, stiffness: 220 }}
     >
       <Link href={href} aria-label={label}>
         <motion.div
           initial="rest"
           whileHover="hover"
-          whileTap={{ scale: 0.95 }}
-          className="relative overflow-hidden rounded-[20px] p-5 flex flex-col gap-3 min-h-[148px] justify-between cursor-pointer"
+          whileTap={{ scale: 0.96 }}
+          className="relative overflow-hidden flex flex-col gap-4 min-h-[148px] justify-between cursor-pointer"
           style={{
-            ...bgStyle,
-            boxShadow: `0 4px 20px ${color}35, 0 1px 3px rgba(0,0,0,0.08)`,
+            background: cardGradient,
+            backdropFilter: "blur(20px) saturate(180%)",
+            WebkitBackdropFilter: "blur(20px) saturate(180%)",
+            border: `1px solid ${color}35`,
+            borderTop: `2px solid ${color}80`,
+            borderRadius: 20,
+            padding: 18,
+            boxShadow: `0 4px 24px ${color}20, 0 1px 0 rgba(255,255,255,0.06) inset`,
           }}
         >
           {/* Shine sweep */}
           <motion.div
             variants={shineVariants}
-            className="absolute inset-y-0 w-[45%] pointer-events-none"
+            className="absolute inset-y-0 w-[40%] pointer-events-none"
             style={{
-              background:
-                "linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent)",
+              background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)",
             }}
           />
 
-          {/* Badge */}
+          {/* Counter badge */}
           {count > 0 && (
             <div
-              className="absolute top-3.5 right-3.5 min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center"
+              className="absolute top-3 right-3 min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center"
               style={{
-                backgroundColor: "rgba(255,255,255,0.25)",
-                backdropFilter: "blur(4px)",
-                WebkitBackdropFilter: "blur(4px)",
+                background: "rgba(255,255,255,0.14)",
+                border: "1px solid rgba(255,255,255,0.22)",
+                backdropFilter: "blur(8px)",
               }}
             >
-              <span className="text-[10px] font-800 leading-none" style={{ color: textColor }}>
+              <span className="text-[10px] font-700 text-white leading-none">
                 {count > 99 ? "99+" : count}
               </span>
             </div>
@@ -110,25 +98,23 @@ export function ModuleCard({
 
           {/* Glassmorphism icon container */}
           <div
-            className="w-12 h-12 rounded-[14px] flex items-center justify-center flex-shrink-0"
+            className="w-[52px] h-[52px] flex items-center justify-center flex-shrink-0"
             style={{
-              backgroundColor: "rgba(255,255,255,0.2)",
+              background: `${color}30`,
+              border: `1px solid ${color}55`,
+              borderRadius: 16,
               backdropFilter: "blur(10px)",
               WebkitBackdropFilter: "blur(10px)",
-              border: "1px solid rgba(255,255,255,0.3)",
+              boxShadow: `0 2px 12px ${color}25`,
             }}
           >
-            <Icon size={26} style={{ color: textColor }} />
+            <Icon size={26} style={{ color }} />
           </div>
 
           {/* Label */}
           <p
-            className="text-[17px] font-800 leading-tight"
-            style={{
-              color: textColor,
-              fontFamily: "var(--font-serif)",
-              textShadow: "0 1px 3px rgba(0,0,0,0.12)",
-            }}
+            className="font-600 leading-tight text-white"
+            style={{ fontSize: 15, letterSpacing: "-0.01em" }}
           >
             {label}
           </p>

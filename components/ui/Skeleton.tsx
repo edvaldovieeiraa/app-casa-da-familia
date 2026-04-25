@@ -8,11 +8,7 @@ interface SkeletonProps {
 
 function SkeletonShimmer({ className = "" }: { className?: string }) {
   return (
-    <div
-      className={["skeleton-shimmer rounded-[10px]", className]
-        .filter(Boolean)
-        .join(" ")}
-    />
+    <div className={["skeleton-shimmer", className].filter(Boolean).join(" ")} />
   );
 }
 
@@ -28,15 +24,16 @@ export function Skeleton({ variant = "text", className = "", count = 1 }: Skelet
           <div
             key={i}
             style={{
-              backgroundColor: "#FFFFFF",
+              background: "rgba(255,255,255,0.06)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              border: "1px solid rgba(255,255,255,0.10)",
               borderRadius: 20,
               padding: 20,
-              border: "1px solid rgba(0,0,0,0.06)",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)",
             }}
           >
             <div className="flex items-center gap-4">
-              <SkeletonShimmer className="w-14 h-14 rounded-[14px]" />
+              <SkeletonShimmer className="w-14 h-14 rounded-[16px]" />
               <div className="flex-1 flex flex-col gap-2.5">
                 <SkeletonShimmer className="h-4 w-3/4" />
                 <SkeletonShimmer className="h-3 w-1/2" />
@@ -51,10 +48,7 @@ export function Skeleton({ variant = "text", className = "", count = 1 }: Skelet
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
-        <SkeletonShimmer
-          key={i}
-          className={["h-4 w-full", className].join(" ")}
-        />
+        <SkeletonShimmer key={i} className={["h-4 w-full", className].join(" ")} />
       ))}
     </>
   );

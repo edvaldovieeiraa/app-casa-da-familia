@@ -25,6 +25,22 @@ async function getCounts(supabase: Awaited<ReturnType<typeof createClient>>) {
   };
 }
 
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Bom dia";
+  if (h < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
+function getUserInitials(name: string): string {
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+}
+
 export default async function HomePage() {
   const supabase = await createClient();
   const [{ data: { user } }, counts] = await Promise.all([
@@ -32,79 +48,79 @@ export default async function HomePage() {
     getCounts(supabase),
   ]);
 
-  const firstName = user?.user_metadata?.full_name?.split(" ")[0]
-    ?? user?.email?.split("@")[0]
-    ?? "Família";
-
+  const fullName = user?.user_metadata?.full_name ?? user?.email?.split("@")[0] ?? "Família";
+  const firstName = fullName.split(" ")[0];
+  const initials = getUserInitials(fullName);
   const countMap: Record<string, number> = { ...counts, config: 0 };
   const gridModules = GRID_IDS.map((id) => MODULES.find((m) => m.id === id)!).filter(Boolean);
 
-  const now = new Date();
-  const hour = now.getHours();
-  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
-
   return (
     <>
-      {/* Premium home header */}
-      <header
-        className="relative overflow-hidden px-5 pt-12 pb-8"
-        style={{
-          background: "linear-gradient(150deg, #1A1A2E 0%, #2D2D4E 60%, #1A1A2E 100%)",
-        }}
-      >
-        {/* Subtle dot texture */}
+      {/* ── Premium dark header ── */}
+      <header className="relative overflow-hidden px-5 pt-14 pb-7">
+        {/* Background glow */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: "radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)",
-            backgroundSize: "20px 20px",
+            background: "radial-gradient(ellipse 80% 100% at 30% 0%, rgba(147,51,234,0.18) 0%, transparent 65%)",
           }}
         />
-        {/* Color accent bar */}
+        {/* Bottom separator */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-[3px]"
-          style={{
-            background: "linear-gradient(90deg, #E53935, #F5C842, #4CAF50, #2196F3)",
-          }}
+          className="absolute bottom-0 left-5 right-5 h-px"
+          style={{ background: "rgba(255,255,255,0.07)" }}
         />
 
-        <div className="relative z-10 flex items-start gap-3 max-w-[480px] mx-auto">
-          <div className="flex-1">
-            <p className="text-white/50 text-[13px] font-500 tracking-[0.04em] uppercase mb-0.5">
-              {greeting},
+        <div className="relative z-10 flex items-center gap-4 max-w-[480px] mx-auto">
+          <div className="flex-1 min-w-0">
+            <p
+              className="font-500 mb-0.5 tracking-wide uppercase"
+              style={{ fontSize: 11, color: "rgba(240,240,255,0.45)", letterSpacing: "0.07em" }}
+            >
+              {getGreeting()}
             </p>
             <h1
-              className="text-white font-700 leading-tight"
-              style={{
-                fontFamily: "var(--font-serif)",
-                fontSize: "clamp(22px, 5vw, 28px)",
-                textShadow: "0 2px 8px rgba(0,0,0,0.3)",
-              }}
+              className="font-700 leading-tight truncate"
+              style={{ fontSize: 26, color: "#F0F0FF", letterSpacing: "-0.02em" }}
             >
-              {firstName}
+              {firstName} 👋
             </h1>
-            <p className="text-white/40 text-xs mt-1 font-400">
-              Casa da Família
+            <p style={{ fontSize: 13, color: "rgba(240,240,255,0.4)", marginTop: 2 }}>
+              Tudo da família em um só lugar
             </p>
           </div>
 
-          <Link
-            href="/config"
-            aria-label="Configurações"
-            className="w-11 h-11 rounded-[14px] flex items-center justify-center mt-1 transition-all"
-            style={{
-              backgroundColor: "rgba(255,255,255,0.1)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <Settings size={20} className="text-white/80" />
-          </Link>
+          {/* User avatar + settings */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center font-700 text-sm"
+              style={{
+                background: "linear-gradient(135deg, #9C27B0, #673AB7)",
+                color: "#fff",
+                boxShadow: "0 4px 14px rgba(156,39,176,0.4)",
+                fontSize: 13,
+              }}
+            >
+              {initials}
+            </div>
+            <Link
+              href="/config"
+              aria-label="Configurações"
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-all"
+              style={{
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.12)",
+              }}
+            >
+              <Settings size={18} style={{ color: "rgba(240,240,255,0.65)" }} />
+            </Link>
+          </div>
         </div>
       </header>
 
+      {/* ── Module grid ── */}
       <main className="max-w-[480px] mx-auto w-full px-4 pt-5 pb-28">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3.5">
           {gridModules.map((module, i) => (
             <ModuleCard
               key={module.id}

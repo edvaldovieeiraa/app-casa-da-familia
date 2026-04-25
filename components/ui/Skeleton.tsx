@@ -6,10 +6,10 @@ interface SkeletonProps {
   count?: number;
 }
 
-function SkeletonPulse({ className = "" }: { className?: string }) {
+function SkeletonShimmer({ className = "" }: { className?: string }) {
   return (
     <div
-      className={["bg-[#E0E0E0] rounded animate-pulse", className]
+      className={["skeleton-shimmer rounded-[10px]", className]
         .filter(Boolean)
         .join(" ")}
     />
@@ -18,19 +18,28 @@ function SkeletonPulse({ className = "" }: { className?: string }) {
 
 export function Skeleton({ variant = "text", className = "", count = 1 }: SkeletonProps) {
   if (variant === "avatar") {
-    return <SkeletonPulse className={["w-12 h-12 rounded-full", className].join(" ")} />;
+    return <SkeletonShimmer className={["w-12 h-12 rounded-full", className].join(" ")} />;
   }
 
   if (variant === "card") {
     return (
       <>
         {Array.from({ length: count }).map((_, i) => (
-          <div key={i} className="bg-white rounded-[16px] p-5 border border-[#E0E0E0]">
+          <div
+            key={i}
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderRadius: 20,
+              padding: 20,
+              border: "1px solid rgba(0,0,0,0.06)",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06)",
+            }}
+          >
             <div className="flex items-center gap-4">
-              <SkeletonPulse className="w-14 h-14 rounded-[12px]" />
-              <div className="flex-1 flex flex-col gap-2">
-                <SkeletonPulse className="h-4 w-3/4 rounded" />
-                <SkeletonPulse className="h-3 w-1/2 rounded" />
+              <SkeletonShimmer className="w-14 h-14 rounded-[14px]" />
+              <div className="flex-1 flex flex-col gap-2.5">
+                <SkeletonShimmer className="h-4 w-3/4" />
+                <SkeletonShimmer className="h-3 w-1/2" />
               </div>
             </div>
           </div>
@@ -42,9 +51,9 @@ export function Skeleton({ variant = "text", className = "", count = 1 }: Skelet
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
-        <SkeletonPulse
+        <SkeletonShimmer
           key={i}
-          className={["h-4 w-full rounded", className].join(" ")}
+          className={["h-4 w-full", className].join(" ")}
         />
       ))}
     </>

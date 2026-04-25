@@ -47,10 +47,17 @@ export function ContaForm({ initial = {}, imoveis, onSubmit, loading = false, su
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
   }
 
+  function isValidDate(value: string | null) {
+    if (!value) return false;
+    const d = new Date(value);
+    return !isNaN(d.getTime()) && value === d.toISOString().slice(0, 10);
+  }
+
   function validate() {
     const errs: typeof errors = {};
     if (!values.descricao?.trim()) errs.descricao = "Descrição obrigatória";
     if (!values.data_vencimento) errs.data_vencimento = "Data de vencimento obrigatória";
+    else if (!isValidDate(values.data_vencimento)) errs.data_vencimento = "Data inválida";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }

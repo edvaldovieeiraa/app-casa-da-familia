@@ -204,3 +204,96 @@ export interface AcessoSistema {
   created_at: string;
   updated_at: string;
 }
+
+export type TarefaCategoria = 'compras' | 'servico' | 'conserto' | 'medico' | 'financeiro' | 'outro';
+export type TarefaPrioridade = 'baixa' | 'media' | 'alta' | 'urgente';
+export type TarefaStatus = 'pendente' | 'em_andamento' | 'concluida' | 'cancelada';
+
+export interface Tarefa {
+  id: string;
+  user_id: string;
+  titulo: string;
+  descricao: string | null;
+  categoria: TarefaCategoria | null;
+  prioridade: TarefaPrioridade;
+  status: TarefaStatus;
+  solicitante_id: string | null;
+  responsavel_id: string | null;
+  data_prazo: string | null;
+  data_conclusao: string | null;
+  comprovante_url: string | null;
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TarefaChecklistItem {
+  id: string;
+  tarefa_id: string;
+  user_id: string;
+  texto: string;
+  concluido: boolean;
+  ordem: number;
+  created_at: string;
+}
+
+export interface TarefaComentario {
+  id: string;
+  tarefa_id: string;
+  user_id: string;
+  membro_id: string | null;
+  texto: string;
+  created_at: string;
+}
+
+export type VeiculoTipo = 'carro' | 'moto' | 'caminhonete' | 'van' | 'outro';
+export type ManutencaoTipo = 'revisao' | 'troca_oleo' | 'pneu' | 'freio' | 'multa' | 'combustivel' | 'outro';
+
+export interface Veiculo {
+  id: string;
+  user_id: string;
+  apelido: string | null;
+  tipo: VeiculoTipo | null;
+  marca: string | null;
+  modelo: string | null;
+  ano_fabricacao: number | null;
+  ano_modelo: number | null;
+  cor: string | null;
+  placa: string;
+  renavam: string | null;
+  chassi: string | null;
+  membro_id: string | null;
+  data_vencimento_cnh: string | null;
+  categoria_cnh: string | null;
+  data_vencimento_ipva: string | null;
+  valor_ipva: number | null;
+  data_vencimento_licenciamento: string | null;
+  data_vencimento_seguro: string | null;
+  seguradora: string | null;
+  numero_apolice: string | null;
+  financiado: boolean;
+  banco_financiamento: string | null;
+  valor_parcela: number | null;
+  data_vencimento_parcela: string | null;
+  parcelas_restantes: number | null;
+  foto_url: string | null;
+  observacoes: string | null;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VeiculoManutencao {
+  id: string;
+  veiculo_id: string;
+  user_id: string;
+  tipo: ManutencaoTipo;
+  descricao: string | null;
+  data_evento: string;
+  proxima_data: string | null;
+  km_atual: number | null;
+  valor: number | null;
+  local: string | null;
+  observacoes: string | null;
+  created_at: string;
+}

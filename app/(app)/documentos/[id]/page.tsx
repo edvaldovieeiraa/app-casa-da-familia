@@ -1,9 +1,10 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Edit, Trash2, FileText, AlertTriangle } from "lucide-react";
+import { Edit, Trash2, FileText, AlertTriangle, ExternalLink } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { Header } from "@/components/layout/Header";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Button } from "@/components/ui/Button";
@@ -47,6 +48,19 @@ export default function DetalhesDocumentoPage({ params }: { params: Promise<{ id
   const { toasts, addToast, removeToast } = useToast();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [frenteUrl, setFrenteUrl] = useState<string | null>(null);
+  const [versoUrl, setVersoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!documento) return;
+    const supabase = createClient();
+    async function getSignedUrl(path: string) {
+      const { data } = await supabase.storage.from("documentos").createSignedUrl(path, 3600);
+      return data?.signedUrl ?? null;
+    }
+    if (documento.foto_frente_url) getSignedUrl(documento.foto_frente_url).then(setFrenteUrl);
+    if (documento.foto_verso_url) getSignedUrl(documento.foto_verso_url).then(setVersoUrl);
+  }, [documento]);
 
   const membro = documento?.membro_id ? membros.find((m) => m.id === documento.membro_id) : undefined;
   const tipo = documento ? (TIPO_LABEL[documento.tipo] ?? documento.tipo) : "Documento";
@@ -126,6 +140,36 @@ export default function DetalhesDocumentoPage({ params }: { params: Promise<{ id
               <div className="bg-white rounded-[16px] border border-[#E0E0E0] p-5">
                 <p className="text-xs font-700 text-[#666666] uppercase tracking-wide mb-2">Observações</p>
                 <p className="text-base text-[#333333] whitespace-pre-wrap leading-relaxed">{documento.observacoes}</p>
+              </div>
+            )}
+
+            {(frenteUrl || versoUrl) && (
+              <div className="bg-white rounded-[16px] border border-[#E0E0E0] p-5 flex flex-col gap-4">
+                <p className="text-xs font-700 text-[#666666] uppercase tracking-wide">Arquivos anexados</p>
+                {frenteUrl && (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm font-600 text-[#333333]">Frente</p>
+                    {frenteUrl.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
+                      <img src={frenteUrl} alt="Frente" className="w-full rounded-[10px] border border-[#E0E0E0] object-contain max-h-56 bg-[#F8F9FA]" />
+                    ) : null}
+                    <a href={frenteUrl} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-[#2196F3] font-600">
+                      <ExternalLink size={14} /> Abrir arquivo
+                    </a>
+                  </div>
+                )}
+                {versoUrl && (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-sm font-600 text-[#333333]">Verso</p>
+                    {versoUrl.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
+                      <img src={versoUrl} alt="Verso" className="w-full rounded-[10px] border border-[#E0E0E0] object-contain max-h-56 bg-[#F8F9FA]" />
+                    ) : null}
+                    <a href={versoUrl} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-[#2196F3] font-600">
+                      <ExternalLink size={14} /> Abrir arquivo
+                    </a>
+                  </div>
+                )}
               </div>
             )}
 

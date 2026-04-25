@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Upload, X, FileText } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/lib/supabase/client";
@@ -33,10 +34,73 @@ const EMPTY: DocumentoFormValues = {
   status: "ativo" as DocumentoStatus, observacoes: null, membro_id: null,
 };
 
+function FileUploadField({
+  label,
+  file,
+  onFileChange,
+}: {
+  label: string;
+  file: File | null;
+  onFileChange: (file: File | null) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isImage = file?.type.startsWith("image/") ?? false;
+  const previewUrl = file && isImage ? URL.createObjectURL(file) : null;
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-sm font-600 text-[#333333]">{label}</label>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*,application/pdf"
+        className="hidden"
+        onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
+      />
+
+      {!file ? (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="w-full min-h-[80px] rounded-[10px] border-2 border-dashed border-[#E0E0E0] flex flex-col items-center justify-center gap-2 text-[#999999] hover:border-[#F5C842] hover:text-[#F5C842] transition-colors bg-white"
+        >
+          <Upload size={22} />
+          <span className="text-sm font-600">Toque para anexar</span>
+          <span className="text-xs">Foto ou PDF</span>
+        </button>
+      ) : (
+        <div className="w-full rounded-[10px] border border-[#E0E0E0] bg-white overflow-hidden">
+          {isImage && previewUrl ? (
+            <img src={previewUrl} alt={label} className="w-full max-h-48 object-contain bg-[#F8F9FA]" />
+          ) : (
+            <div className="flex items-center gap-3 px-4 py-3">
+              <FileText size={24} className="text-[#666666] flex-shrink-0" />
+              <span className="text-sm text-[#333333] truncate flex-1">{file.name}</span>
+            </div>
+          )}
+          <div className="flex items-center justify-between px-4 py-2 border-t border-[#F0F0F0]">
+            <span className="text-xs text-[#666666] truncate flex-1 mr-2">{file.name}</span>
+            <button
+              type="button"
+              onClick={() => { onFileChange(null); if (inputRef.current) inputRef.current.value = ""; }}
+              className="flex-shrink-0 w-7 h-7 rounded-full bg-[#FEF2F2] flex items-center justify-center text-[#E53935]"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DocumentoForm({ initial = {}, onSubmit, loading = false, submitLabel = "Salvar" }: DocumentoFormProps) {
   const [values, setValues] = useState<DocumentoFormValues>({ ...EMPTY, ...initial });
   const [errors, setErrors] = useState<Partial<Record<keyof DocumentoFormValues, string>>>({});
   const [membros, setMembros] = useState<Pick<FamiliaMembro, "id" | "nome">[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [frente, setFrente] = useState<File | null>(null);
+  const [verso, setVerso] = useState<File | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -56,13 +120,39 @@ export function DocumentoForm({ initial = {}, onSubmit, loading = false, submitL
     return Object.keys(errs).length === 0;
   }
 
+  async function uploadFile(file: File, userId: string, side: "frente" | "verso") {
+    const supabase = createClient();
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `${userId}/${Date.now()}-${side}.${ext}`;
+    const { error } = await supabase.storage.from("documentos").upload(path, file, { upsert: true });
+    if (error) throw new Error(error.message);
+    return path;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
-    await onSubmit(values);
+
+    setUploading(true);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+
+      let foto_frente_url = values.foto_frente_url;
+      let foto_verso_url = values.foto_verso_url;
+
+      if (frente) foto_frente_url = await uploadFile(frente, user.id, "frente");
+      if (verso) foto_verso_url = await uploadFile(verso, user.id, "verso");
+
+      await onSubmit({ ...values, foto_frente_url, foto_verso_url });
+    } finally {
+      setUploading(false);
+    }
   }
 
   function str(v: string | null | undefined) { return v ?? ""; }
+  const isBusy = loading || uploading;
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5 pb-8">
@@ -93,6 +183,9 @@ export function DocumentoForm({ initial = {}, onSubmit, loading = false, submitL
         </select>
       </div>
 
+      <FileUploadField label="Frente do documento" file={frente} onFileChange={setFrente} />
+      <FileUploadField label="Verso do documento (opcional)" file={verso} onFileChange={setVerso} />
+
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-600 text-[#333333]">Observações</label>
         <textarea value={str(values.observacoes)} onChange={(e) => set("observacoes", e.target.value)}
@@ -100,8 +193,10 @@ export function DocumentoForm({ initial = {}, onSubmit, loading = false, submitL
           className="w-full rounded-[10px] border border-[#E0E0E0] px-4 py-3 text-base text-[#333333] font-[inherit] bg-white outline-none resize-none focus:border-[#333333] placeholder:text-[#999999]" />
       </div>
 
-      <Button type="submit" fullWidth loading={loading} size="lg"
-        style={{ backgroundColor: "#F5C842", color: "#333333" }}>{submitLabel}</Button>
+      <Button type="submit" fullWidth loading={isBusy} size="lg"
+        style={{ backgroundColor: "#F5C842", color: "#333333" }}>
+        {uploading ? "Enviando arquivo..." : submitLabel}
+      </Button>
     </form>
   );
 }

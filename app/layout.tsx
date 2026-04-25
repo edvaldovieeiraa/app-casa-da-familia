@@ -1,13 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito } from "next/font/google";
 import "./globals.css";
-
-const nunito = Nunito({
-  subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
-  variable: "--font-nunito",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Casa da Família",
@@ -20,6 +12,7 @@ export const metadata: Metadata = {
   },
   icons: {
     apple: "/icons/icon-192.png",
+    icon: "/icon.svg",
   },
   formatDetection: {
     telephone: false,
@@ -27,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1A1A2E",
+  themeColor: "#0F0F1A",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -40,8 +33,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={nunito.variable} suppressHydrationWarning>
-      <body className="min-h-full font-[var(--font-nunito)]" suppressHydrationWarning>{children}</body>
+    <html lang="pt-BR" suppressHydrationWarning>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

@@ -18,7 +18,7 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
+    <div className="min-h-screen flex flex-col">
       {children}
       <BottomNav />
       <InstallPrompt />

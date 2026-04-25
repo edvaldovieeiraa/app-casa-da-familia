@@ -4,21 +4,24 @@ import { createClient } from "@/lib/supabase/server";
 import { MODULES } from "@/lib/modules";
 import { ModuleCard } from "@/components/modules/ModuleCard";
 
-const GRID_IDS = ["imoveis", "documentos", "contatos", "feiras", "contas", "familia", "pets"];
+const GRID_IDS = ["imoveis", "tarefas", "documentos", "contatos", "feiras", "contas", "familia", "pets", "veiculos"];
 
 async function getCounts(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const tables = ["imoveis", "documentos", "contatos", "feiras", "contas", "familia_membros", "pets"] as const;
-  const results = await Promise.all(
-    tables.map((t) => supabase.from(t).select("id", { count: "exact", head: true }))
-  );
+  const tables = ["imoveis", "documentos", "contatos", "feiras", "contas", "familia_membros", "pets", "veiculos"] as const;
+  const [tarefasAtivas, ...rest] = await Promise.all([
+    supabase.from("tarefas").select("id", { count: "exact", head: true }).in("status", ["pendente", "em_andamento"]),
+    ...tables.map((t) => supabase.from(t).select("id", { count: "exact", head: true })),
+  ]);
   return {
-    imoveis: results[0].count ?? 0,
-    documentos: results[1].count ?? 0,
-    contatos: results[2].count ?? 0,
-    feiras: results[3].count ?? 0,
-    contas: results[4].count ?? 0,
-    familia: results[5].count ?? 0,
-    pets: results[6].count ?? 0,
+    tarefas: tarefasAtivas.count ?? 0,
+    imoveis: rest[0].count ?? 0,
+    documentos: rest[1].count ?? 0,
+    contatos: rest[2].count ?? 0,
+    feiras: rest[3].count ?? 0,
+    contas: rest[4].count ?? 0,
+    familia: rest[5].count ?? 0,
+    pets: rest[6].count ?? 0,
+    veiculos: rest[7].count ?? 0,
   };
 }
 
@@ -34,20 +37,68 @@ export default async function HomePage() {
     ?? "Família";
 
   const countMap: Record<string, number> = { ...counts, config: 0 };
-
   const gridModules = GRID_IDS.map((id) => MODULES.find((m) => m.id === id)!).filter(Boolean);
+
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
 
   return (
     <>
-      <header className="px-5 pt-10 pb-6" style={{ backgroundColor: "#1A1A2E" }}>
-        <div className="flex items-center gap-3 max-w-[480px] mx-auto">
+      {/* Premium home header */}
+      <header
+        className="relative overflow-hidden px-5 pt-12 pb-8"
+        style={{
+          background: "linear-gradient(150deg, #1A1A2E 0%, #2D2D4E 60%, #1A1A2E 100%)",
+        }}
+      >
+        {/* Subtle dot texture */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: "radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)",
+            backgroundSize: "20px 20px",
+          }}
+        />
+        {/* Color accent bar */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-[3px]"
+          style={{
+            background: "linear-gradient(90deg, #E53935, #F5C842, #4CAF50, #2196F3)",
+          }}
+        />
+
+        <div className="relative z-10 flex items-start gap-3 max-w-[480px] mx-auto">
           <div className="flex-1">
-            <p className="text-white/60 text-sm">Olá,</p>
-            <p className="text-white font-800 text-lg leading-tight">{firstName}</p>
+            <p className="text-white/50 text-[13px] font-500 tracking-[0.04em] uppercase mb-0.5">
+              {greeting},
+            </p>
+            <h1
+              className="text-white font-700 leading-tight"
+              style={{
+                fontFamily: "var(--font-serif)",
+                fontSize: "clamp(22px, 5vw, 28px)",
+                textShadow: "0 2px 8px rgba(0,0,0,0.3)",
+              }}
+            >
+              {firstName}
+            </h1>
+            <p className="text-white/40 text-xs mt-1 font-400">
+              Casa da Família
+            </p>
           </div>
-          <Link href="/config" aria-label="Configurações"
-            className="w-11 h-11 rounded-[14px] bg-white/10 flex items-center justify-center">
-            <Settings size={22} className="text-white" />
+
+          <Link
+            href="/config"
+            aria-label="Configurações"
+            className="w-11 h-11 rounded-[14px] flex items-center justify-center mt-1 transition-all"
+            style={{
+              backgroundColor: "rgba(255,255,255,0.1)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            <Settings size={20} className="text-white/80" />
           </Link>
         </div>
       </header>

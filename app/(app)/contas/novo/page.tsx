@@ -20,9 +20,12 @@ export default function NovaContaPage() {
   async function handleSubmit(values: Parameters<typeof createConta>[0]) {
     setSaving(true);
     try {
-      const nova = await createConta(values);
-      addToast("Conta cadastrada!", "success");
-      setTimeout(() => router.push(`/contas/${nova.id}`), 800);
+      const { conta, copiasCriadas } = await createConta(values);
+      const msg = copiasCriadas > 0
+        ? `Conta criada + ${copiasCriadas} cópias para os próximos meses!`
+        : "Conta cadastrada!";
+      addToast(msg, "success");
+      setTimeout(() => router.push(`/contas/${conta.id}`), 800);
     } catch (err) {
       addToast(err instanceof Error ? err.message : "Erro ao salvar", "error");
       setSaving(false);

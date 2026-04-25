@@ -1,133 +1,149 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 /* ─── Design Tokens ─────────────────────────────────────────────────── */
 @theme inline {
-  /* Módulos */
-  --color-imoveis:     #E53935;
-  --color-documentos:  #F5C842;
-  --color-contatos:    #4CAF50;
-  --color-feiras:      #2196F3;
-  --color-config:      #1A1A2E;
+  /* Fontes */
+  --font-sans: 'Sora', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
-  /* Suporte */
-  --color-background:  #F8F9FA;
-  --color-surface:     #FFFFFF;
-  --color-text:        #333333;
-  --color-text-soft:   #666666;
-  --color-border:      #E0E0E0;
+  /* Paleta Maximus */
+  --color-imoveis:    #E53935;
+  --color-documentos: #F5C842;
+  --color-contatos:   #4CAF50;
+  --color-feiras:     #2196F3;
+  --color-familia:    #9C27B0;
+  --color-pets:       #FF6F00;
+  --color-veiculos:   #F57C00;
+  --color-tarefas:    #00897B;
+  --color-config:     #1A1A2E;
+
+  /* Fundos */
+  --color-background:  #0F0F1A;
+  --color-surface:     #16162A;
+  --color-text:        #F0F0FF;
+  --color-text-soft:   rgba(240, 240, 255, 0.6);
+  --color-border:      rgba(255, 255, 255, 0.10);
 
   /* Feedback */
-  --color-success:     #4CAF50;
-  --color-warning:     #F5C842;
-  --color-danger:      #E53935;
+  --color-success: #4CAF50;
+  --color-warning: #F5C842;
+  --color-danger:  #E53935;
 
-  /* Raios e espaços */
-  --radius-card:   16px;
-  --radius-button: 12px;
-  --radius-input:  10px;
-
-  /* Tipografia */
-  --font-sans: 'Nunito', ui-sans-serif, system-ui, sans-serif;
+  /* Raios */
+  --radius-card:   20px;
+  --radius-button: 14px;
+  --radius-input:  14px;
 }
 
-/* ─── Resets mobile ──────────────────────────────────────────────────── */
-* {
+/* ─── Animations ─────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+
+@keyframes float-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* ─── Resets ─────────────────────────────────────────────────────────── */
+*, *::before, *::after {
   -webkit-tap-highlight-color: transparent;
   box-sizing: border-box;
 }
 
-html,
+html {
+  font-family: var(--font-sans);
+  background: #0F0F1A;
+  color: #F0F0FF;
+  overscroll-behavior-y: contain;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 body {
-  background-color: #F8F9FA;
-  color: #333333;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(147, 51, 234, 0.15) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(33, 150, 243, 0.08) 0%, transparent 50%),
+    #0F0F1A;
+  min-height: 100vh;
+  color: #F0F0FF;
+}
+
+/* ─── Glass utilities ────────────────────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(30px) saturate(200%);
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* ─── Global form elements (dark theme override) ─────────────────────── */
+textarea,
+select {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  color: #F0F0FF;
   font-family: var(--font-sans);
-  min-height: 100%;
-}
-
-/* ─── Classes utilitárias ────────────────────────────────────────────── */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-height: 48px;
-  padding: 0 1.5rem;
-  border-radius: var(--radius-button);
-  font-family: var(--font-sans);
-  font-size: 1rem;
-  font-weight: 700;
-  color: #FFFFFF;
-  background-color: var(--color-imoveis);
-  border: none;
-  cursor: pointer;
-  transition: opacity 0.15s ease, transform 0.1s ease;
-}
-
-.btn-primary:active {
-  opacity: 0.85;
-  transform: scale(0.97);
-}
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-height: 48px;
-  padding: 0 1.5rem;
-  border-radius: var(--radius-button);
-  font-family: var(--font-sans);
-  font-size: 1rem;
-  font-weight: 700;
-  color: #333333;
-  background-color: #FFFFFF;
-  border: 1.5px solid var(--color-border);
-  cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.1s ease;
-}
-
-.btn-secondary:active {
-  background-color: #F0F0F0;
-  transform: scale(0.97);
-}
-
-.btn-secondary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.input {
-  display: block;
-  width: 100%;
-  min-height: 48px;
-  padding: 0 1rem;
-  border-radius: var(--radius-input);
-  font-family: var(--font-sans);
-  font-size: 1rem;
-  font-weight: 400;
-  color: #333333;
-  background-color: #FFFFFF;
-  border: 1.5px solid var(--color-border);
+  font-size: 16px;
   outline: none;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
-.input:focus {
-  border-color: #333333;
+textarea:focus,
+select:focus {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.10);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
 }
 
-.input::placeholder {
-  color: #999999;
+textarea::placeholder {
+  color: rgba(240, 240, 255, 0.35);
 }
 
-.card {
-  background-color: #FFFFFF;
-  border-radius: var(--radius-card);
-  padding: 20px;
-  border: 1px solid var(--color-border);
+select option {
+  background: #16162A;
+  color: #F0F0FF;
 }
+
+/* ─── Skeleton shimmer (dark) ────────────────────────────────────────── */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.10) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.8s ease infinite;
+  border-radius: 12px;
+}
+
+/* ─── Label premium ──────────────────────────────────────────────────── */
+.label-premium {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(240, 240, 255, 0.55);
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }

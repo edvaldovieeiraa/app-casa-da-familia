@@ -7,6 +7,8 @@ import {
   Wallet,
   Settings,
   PawPrint,
+  Car,
+  ClipboardList,
 } from "lucide-react";
 import type { ModuleConfig } from "@/types/ui";
 
@@ -74,6 +76,24 @@ export const MODULES: ModuleConfig[] = [
     icon: PawPrint,
     href: "/pets",
     description: "Seus animais de estimação",
+  },
+  {
+    id: "tarefas",
+    label: "Tarefas",
+    color: "#00897B",
+    textColor: "#FFFFFF",
+    icon: ClipboardList,
+    href: "/tarefas",
+    description: "Recados e tarefas da família",
+  },
+  {
+    id: "veiculos",
+    label: "Veículos",
+    color: "#F57C00",
+    textColor: "#FFFFFF",
+    icon: Car,
+    href: "/veiculos",
+    description: "Seus veículos",
   },
   {
     id: "config",

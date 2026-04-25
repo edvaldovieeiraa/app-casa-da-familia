@@ -55,7 +55,7 @@ export default function ContasPage() {
     setMes(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
   }
 
-  const [mesNum, anoNum] = mes.split("-").map(Number);
+  const [anoNum, mesNum] = mes.split("-").map(Number);
   const mesLabel = new Date(anoNum, mesNum - 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
   return (

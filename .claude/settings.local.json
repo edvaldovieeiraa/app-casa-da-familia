@@ -9,7 +9,16 @@
       "Bash(cat .eslintrc.json)",
       "Bash(cat .eslintrc.js)",
       "Bash(cat eslint.config.mjs)",
-      "Bash(cat eslint.config.js)"
+      "Bash(cat eslint.config.js)",
+      "Bash(curl -L -o skills/frontend-design.md https://raw.githubusercontent.com/anthropics/skills/main/frontend-design/SKILL.md)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(curl -L -o skills/skill-creator.md https://raw.githubusercontent.com/anthropics/skills/main/skill-creator/SKILL.md)",
+      "Bash(curl -s \"https://api.github.com/repos/anthropics/skills/contents\")",
+      "Bash(curl -s \"https://api.github.com/repos/anthropics/skills/contents/skills\")",
+      "Bash(curl -s \"https://api.github.com/repos/anthropics/skills/contents/skills/frontend-design\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

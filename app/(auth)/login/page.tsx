@@ -7,6 +7,7 @@ import { Home, Mail, Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ToastContainer } from "@/components/ui/Toast";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import { useToast } from "@/hooks/useToast";
 import { createClient } from "@/lib/supabase/client";
 
@@ -60,6 +61,7 @@ export default function LoginPage() {
   return (
     <>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
+      <InstallPrompt noNav />
 
       <div className="min-h-screen flex flex-col items-center justify-center px-5 py-10">
         {/* Background glow */}

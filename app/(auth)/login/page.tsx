@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Home, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Home, Mail, Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ToastContainer } from "@/components/ui/Toast";
@@ -60,126 +60,171 @@ export default function LoginPage() {
   return (
     <>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
-      <div className="min-h-screen flex flex-col bg-[#F8F9FA]">
-        {/* Header */}
+
+      <div className="min-h-screen flex flex-col items-center justify-center px-5 py-10">
+        {/* Background glow */}
         <div
-          className="flex flex-col items-center justify-center gap-3 py-12 px-6"
-          style={{ backgroundColor: "#1A1A2E" }}
-        >
+          className="fixed inset-0 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse 70% 60% at 50% 0%, rgba(147,51,234,0.18) 0%, transparent 65%)",
+          }}
+        />
+
+        <div className="relative z-10 w-full max-w-[400px] flex flex-col gap-8">
+          {/* Logo + título */}
           <motion.div
-            initial={{ scale: 0.7, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", damping: 18 }}
-            className="w-20 h-20 rounded-[20px] bg-white/10 flex items-center justify-center"
-          >
-            <Home size={40} className="text-white" />
-          </motion.div>
-          <motion.h1
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-2xl font-800 text-white"
+            transition={{ type: "spring", damping: 20 }}
+            className="flex flex-col items-center gap-4"
           >
-            Casa da Família
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="text-white/60 text-sm"
-          >
-            Entre na sua conta para continuar
-          </motion.p>
-        </div>
-
-        {/* Formulário */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, type: "spring", damping: 24 }}
-          className="flex-1 max-w-[440px] w-full mx-auto px-6 py-8 flex flex-col gap-5"
-        >
-          {magicSent ? (
-            <div className="flex flex-col items-center gap-4 py-10 text-center">
-              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                <Mail size={32} className="text-[#4CAF50]" />
-              </div>
-              <h2 className="text-xl font-700 text-[#333333]">Link enviado!</h2>
-              <p className="text-[#666666]">
-                Verifique seu e-mail <strong>{email}</strong> e clique no link para entrar.
-              </p>
-              <Button
-                variant="ghost"
-                onClick={() => setMagicSent(false)}
-                className="mt-2"
-              >
-                Usar outra forma de entrar
-              </Button>
+            <div
+              className="w-20 h-20 rounded-[22px] flex items-center justify-center"
+              style={{
+                background: "linear-gradient(135deg, #9C27B0 0%, #1A1A2E 100%)",
+                boxShadow: "0 8px 32px rgba(156,39,176,0.35)",
+                border: "1px solid rgba(255,255,255,0.12)",
+              }}
+            >
+              <Home size={36} style={{ color: "#fff" }} />
             </div>
-          ) : (
-            <form onSubmit={handleLogin} className="flex flex-col gap-4">
-              <Input
-                label="E-mail"
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                leftIcon={Mail}
-                autoComplete="email"
-              />
-              <div className="relative">
-                <Input
-                  label="Senha"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  leftIcon={Lock}
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                  className="absolute right-3 bottom-[12px] text-[#666666]"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
 
-              <Button
-                type="submit"
-                fullWidth
-                loading={loadingLogin}
-                style={{ backgroundColor: "#1A1A2E" }}
-                className="mt-2"
+            <div className="text-center">
+              <h1
+                className="font-800 leading-tight"
+                style={{ fontSize: 26, color: "#F0F0FF", letterSpacing: "-0.02em" }}
               >
-                Entrar
-              </Button>
-
-              <div className="flex items-center gap-3 my-1">
-                <div className="flex-1 h-px bg-[#E0E0E0]" />
-                <span className="text-xs text-[#999999]">ou</span>
-                <div className="flex-1 h-px bg-[#E0E0E0]" />
-              </div>
-
-              <Button
-                type="button"
-                variant="secondary"
-                fullWidth
-                loading={loadingMagic}
-                icon={Mail}
-                onClick={handleMagicLink}
-              >
-                Entrar com link no e-mail
-              </Button>
-
-              <p className="text-xs text-[#999999] text-center leading-relaxed">
-                Sem senha: enviaremos um link mágico para você entrar com um clique.
+                Casa da Família
+              </h1>
+              <p style={{ fontSize: 14, color: "rgba(240,240,255,0.5)", marginTop: 4 }}>
+                Entre na sua conta para continuar
               </p>
-            </form>
-          )}
-        </motion.div>
+            </div>
+          </motion.div>
+
+          {/* Card de formulário */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12, type: "spring", damping: 22 }}
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              backdropFilter: "blur(24px) saturate(180%)",
+              WebkitBackdropFilter: "blur(24px) saturate(180%)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 24,
+              padding: 28,
+              boxShadow: "0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)",
+            }}
+          >
+            {magicSent ? (
+              /* ── Magic link enviado ── */
+              <div className="flex flex-col items-center gap-5 py-4 text-center">
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center"
+                  style={{
+                    background: "rgba(76,175,80,0.18)",
+                    border: "1px solid rgba(76,175,80,0.4)",
+                  }}
+                >
+                  <CheckCircle size={32} style={{ color: "#4CAF50" }} />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <h2
+                    className="font-700"
+                    style={{ fontSize: 20, color: "#F0F0FF" }}
+                  >
+                    Link enviado!
+                  </h2>
+                  <p style={{ fontSize: 14, color: "rgba(240,240,255,0.55)", lineHeight: 1.6 }}>
+                    Verifique seu e-mail{" "}
+                    <strong style={{ color: "#F0F0FF" }}>{email}</strong>{" "}
+                    e clique no link para entrar.
+                  </p>
+                </div>
+
+                <Button
+                  variant="ghost"
+                  onClick={() => setMagicSent(false)}
+                  className="mt-1"
+                >
+                  Usar outra forma de entrar
+                </Button>
+              </div>
+            ) : (
+              /* ── Formulário principal ── */
+              <form onSubmit={handleLogin} className="flex flex-col gap-4">
+                <Input
+                  label="E-mail"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  leftIcon={Mail}
+                  autoComplete="email"
+                />
+
+                <div className="relative">
+                  <Input
+                    label="Senha"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    leftIcon={Lock}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    className="absolute right-3 bottom-[14px]"
+                    style={{ color: "rgba(240,240,255,0.4)" }}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+
+                <Button
+                  type="submit"
+                  fullWidth
+                  loading={loadingLogin}
+                  style={{ backgroundColor: "#9C27B0" }}
+                  className="mt-2"
+                >
+                  Entrar
+                </Button>
+
+                {/* Separador */}
+                <div className="flex items-center gap-3 my-1">
+                  <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
+                  <span style={{ fontSize: 12, color: "rgba(240,240,255,0.4)" }}>ou</span>
+                  <div className="flex-1 h-px" style={{ backgroundColor: "rgba(255,255,255,0.1)" }} />
+                </div>
+
+                <Button
+                  type="button"
+                  variant="glass"
+                  fullWidth
+                  loading={loadingMagic}
+                  icon={Mail}
+                  onClick={handleMagicLink}
+                >
+                  Entrar com link no e-mail
+                </Button>
+
+                <p
+                  className="text-center leading-relaxed"
+                  style={{ fontSize: 12, color: "rgba(240,240,255,0.38)" }}
+                >
+                  Sem senha: enviaremos um link mágico para você entrar com um clique.
+                </p>
+              </form>
+            )}
+          </motion.div>
+        </div>
       </div>
     </>
   );

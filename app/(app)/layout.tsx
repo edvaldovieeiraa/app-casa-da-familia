@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { InstallPrompt } from "@/components/InstallPrompt";
-import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 
 export default async function AppLayout({
   children,
@@ -23,7 +22,6 @@ export default async function AppLayout({
       {children}
       <BottomNav />
       <InstallPrompt />
-      <ServiceWorkerRegistration />
     </div>
   );
 }

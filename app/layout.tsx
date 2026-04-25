@@ -47,6 +47,14 @@ export default function RootLayout({
         <meta name="theme-color" content="#0F0F1A" />
         <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png" />
         <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
+        {/* Captura beforeinstallprompt antes do React hidratar */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          window.__pwaPrompt = null;
+          window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            window.__pwaPrompt = e;
+          });
+        `}} />
       </head>
       <body suppressHydrationWarning>
         {/* SW registrado em todas as páginas — login inclusive */}

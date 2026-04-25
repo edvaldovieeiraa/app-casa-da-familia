@@ -26,6 +26,15 @@ export function InstallPrompt({ noNav = false }: InstallPromptProps) {
     // Já está instalado como PWA — não mostrar
     if (window.matchMedia("(display-mode: standalone)").matches) return;
 
+    // O evento pode ter disparado antes do React hidratar; o layout.tsx
+    // o captura globalmente em window.__pwaPrompt para não perdermos.
+    const early = (window as Window & { __pwaPrompt?: BeforeInstallPromptEvent }).__pwaPrompt;
+    if (early) {
+      setDeferredPrompt(early);
+      setVisible(true);
+      return;
+    }
+
     function handler(e: Event) {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);

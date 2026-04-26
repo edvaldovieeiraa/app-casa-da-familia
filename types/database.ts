@@ -230,7 +230,6 @@ export interface Tarefa {
 export interface TarefaChecklistItem {
   id: string;
   tarefa_id: string;
-  user_id: string;
   texto: string;
   concluido: boolean;
   ordem: number;
@@ -240,7 +239,6 @@ export interface TarefaChecklistItem {
 export interface TarefaComentario {
   id: string;
   tarefa_id: string;
-  user_id: string;
   membro_id: string | null;
   texto: string;
   created_at: string;

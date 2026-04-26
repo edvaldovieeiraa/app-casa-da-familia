@@ -14,6 +14,7 @@ import { ToastContainer } from "@/components/ui/Toast";
 import { useMembros } from "@/hooks/useMembros";
 import { useToast } from "@/hooks/useToast";
 import { createClient } from "@/lib/supabase/client";
+import { APP_VERSION } from "@/lib/version";
 
 const COLOR = "#1A1A2E";
 
@@ -178,7 +179,7 @@ export default function ConfigPage() {
                 <Info size={18} className="text-[#1A1A2E]" />
                 <span className="font-600 text-[#333333]">Casa da Família</span>
               </div>
-              <span className="text-sm text-[#999999]">v0.1.0</span>
+              <span className="text-sm text-[#999999]">v{APP_VERSION}</span>
             </Row>
           </Section>
 

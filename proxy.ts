@@ -34,7 +34,10 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/magic-link");
+  const isAuthRoute =
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/magic-link") ||
+    pathname.startsWith("/callback");
 
   if (!user && !isAuthRoute) {
     const url = request.nextUrl.clone();
@@ -53,6 +56,14 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    /*
+     * Exclui:
+     * - _next/static, _next/image  → assets do Next.js
+     * - favicon.ico, sw.js         → arquivos raiz especiais
+     * - manifest.json              → Web App Manifest (não pode ser redirecionado)
+     * - icons/                     → ícones do PWA
+     * - extensões de imagem comuns
+     */
+    "/((?!_next/static|_next/image|favicon\\.ico|sw\\.js|manifest\\.json|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

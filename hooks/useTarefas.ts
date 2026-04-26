@@ -110,11 +110,9 @@ export function useTarefa(id: string) {
 
   async function adicionarComentario(texto: string, membroId: string | null) {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Usuário não autenticado");
     const { data, error: err } = await supabase
       .from("tarefa_comentarios")
-      .insert({ tarefa_id: id, user_id: user.id, membro_id: membroId, texto })
+      .insert({ tarefa_id: id, membro_id: membroId, texto })
       .select().single();
     if (err) throw new Error(err.message);
     setComentarios((prev) => [...prev, data as TarefaComentario]);
@@ -123,12 +121,10 @@ export function useTarefa(id: string) {
 
   async function adicionarChecklistItem(texto: string) {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Usuário não autenticado");
     const ordem = checklist.length;
     const { data, error: err } = await supabase
       .from("tarefa_checklist")
-      .insert({ tarefa_id: id, user_id: user.id, texto, concluido: false, ordem })
+      .insert({ tarefa_id: id, texto, concluido: false, ordem })
       .select().single();
     if (err) throw new Error(err.message);
     setChecklist((prev) => [...prev, data as TarefaChecklistItem]);
@@ -153,10 +149,8 @@ export function useTarefa(id: string) {
   async function criarChecklistEmLote(itens: string[]) {
     if (itens.length === 0) return;
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
     const rows = itens.map((texto, ordem) => ({
-      tarefa_id: id, user_id: user.id, texto, concluido: false, ordem,
+      tarefa_id: id, texto, concluido: false, ordem,
     }));
     const { data, error: err } = await supabase.from("tarefa_checklist").insert(rows).select();
     if (!err && data) setChecklist((prev) => [...prev, ...(data as TarefaChecklistItem[])]);

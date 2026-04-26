@@ -126,7 +126,10 @@ export default function DetalhesTarefaPage({ params }: { params: Promise<{ id: s
     try {
       await adicionarChecklistItem(texto);
       setNovoItemChecklist("");
-    } catch { addToast("Erro ao adicionar item", "error"); }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao adicionar item";
+      addToast(msg, "error");
+    }
     finally { setAddingItem(false); }
   }
 

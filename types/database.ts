@@ -244,6 +244,112 @@ export interface TarefaComentario {
   created_at: string;
 }
 
+// ─── Saúde ────────────────────────────────────────────────────────────────────
+
+export interface SaudePaciente {
+  id: string;
+  user_id: string;
+  nome: string;
+  apelido: string | null;
+  data_nascimento: string | null;
+  tipo_sanguineo: string | null;
+  peso_kg: number | null;
+  altura_cm: number | null;
+  foto_url: string | null;
+  condicoes_cronicas: string[] | null;
+  alergias: string[] | null;
+  plano_saude: string | null;
+  numero_carteirinha: string | null;
+  observacoes: string | null;
+  created_at: string;
+}
+
+export interface SaudeMedicamento {
+  id: string;
+  paciente_id: string;
+  nome: string;
+  principio_ativo: string | null;
+  dose: string | null;
+  unidade: string | null;
+  frequencia: string | null;
+  horarios: string[] | null;
+  estoque_atual: number | null;
+  estoque_minimo: number | null;
+  data_inicio: string | null;
+  data_fim: string | null;
+  medico_prescreveu: string | null;
+  uso_continuo: boolean;
+  ativo: boolean;
+  observacoes: string | null;
+  created_at: string;
+}
+
+export interface SaudeDose {
+  id: string;
+  medicamento_id: string;
+  data_hora: string;
+  tomou: boolean;
+  motivo_nao_tomou: string | null;
+  observacao: string | null;
+}
+
+export type SaudeConsultaTipo = 'consulta' | 'exame' | 'retorno';
+
+export interface SaudeConsulta {
+  id: string;
+  paciente_id: string;
+  tipo: SaudeConsultaTipo | null;
+  especialidade: string | null;
+  medico: string | null;
+  local: string | null;
+  data_hora: string | null;
+  resultado: string | null;
+  anexo_url: string | null;
+  observacoes: string | null;
+  created_at: string;
+}
+
+export interface SaudeInternacao {
+  id: string;
+  paciente_id: string;
+  hospital: string | null;
+  quarto: string | null;
+  data_entrada: string;
+  data_alta: string | null;
+  diagnostico: string | null;
+  medico_responsavel: string | null;
+  procedimentos: string[] | null;
+  resumo_alta: string | null;
+  anexo_url: string | null;
+  observacoes: string | null;
+  created_at: string;
+}
+
+export interface SaudeSinalVital {
+  id: string;
+  paciente_id: string;
+  data_hora: string;
+  pressao_sistolica: number | null;
+  pressao_diastolica: number | null;
+  frequencia_cardiaca: number | null;
+  glicemia: number | null;
+  saturacao_o2: number | null;
+  peso_kg: number | null;
+  temperatura: number | null;
+  observacao: string | null;
+}
+
+export interface SaudeContatoEmergencia {
+  id: string;
+  paciente_id: string;
+  nome: string;
+  relacao: string | null;
+  telefone: string;
+  prioridade: number;
+}
+
+// ─── Veículos ─────────────────────────────────────────────────────────────────
+
 export type VeiculoTipo = 'carro' | 'moto' | 'caminhonete' | 'van' | 'outro';
 export type ManutencaoTipo = 'revisao' | 'troca_oleo' | 'pneu' | 'freio' | 'multa' | 'combustivel' | 'outro';
 

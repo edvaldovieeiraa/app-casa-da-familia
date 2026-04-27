@@ -8,96 +8,133 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ToastContainer } from "@/components/ui/Toast";
+import { usePaciente } from "@/hooks/useSaude";
 import { useToast } from "@/hooks/useToast";
-import { usePaciente, usePacientes } from "@/hooks/useSaude";
 
-const COLOR = "#00ACC1";
+const COLOR = "#E91E63";
 const TIPOS_SANGUINEOS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 export default function EditarPacientePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const { paciente, loading, error } = usePaciente(id);
-  const { updatePaciente } = usePacientes();
+  const { paciente, loading, update } = usePaciente(id);
   const { toasts, addToast, removeToast } = useToast();
-
-  const [nome, setNome] = useState("");
-  const [apelido, setApelido] = useState("");
-  const [dataNascimento, setDataNascimento] = useState("");
-  const [tipoSanguineo, setTipoSanguineo] = useState("");
-  const [pesoKg, setPesoKg] = useState("");
-  const [alturaCm, setAlturaCm] = useState("");
-  const [planoSaude, setPlanoSaude] = useState("");
-  const [numeroCarteirinha, setNumeroCarteirinha] = useState("");
-  const [alergiasTexto, setAlergiasTexto] = useState("");
-  const [condicoesTexto, setCondicoesTexto] = useState("");
-  const [observacoes, setObservacoes] = useState("");
   const [saving, setSaving] = useState(false);
-  const [ready, setReady] = useState(false);
+
+  const [form, setForm] = useState({
+    nome: "",
+    apelido: "",
+    data_nascimento: "",
+    tipo_sanguineo: "",
+    peso_kg: "",
+    altura_cm: "",
+    plano_saude: "",
+    numero_carteirinha: "",
+    condicoes_cronicas: "",
+    alergias: "",
+    observacoes: "",
+  });
 
   useEffect(() => {
     if (!paciente) return;
-    setNome(paciente.nome ?? "");
-    setApelido(paciente.apelido ?? "");
-    setDataNascimento(paciente.data_nascimento ?? "");
-    setTipoSanguineo(paciente.tipo_sanguineo ?? "");
-    setPesoKg(paciente.peso_kg != null ? String(paciente.peso_kg) : "");
-    setAlturaCm(paciente.altura_cm != null ? String(paciente.altura_cm) : "");
-    setPlanoSaude(paciente.plano_saude ?? "");
-    setNumeroCarteirinha(paciente.numero_carteirinha ?? "");
-    setAlergiasTexto((paciente.alergias ?? []).join(", "));
-    setCondicoesTexto((paciente.condicoes_cronicas ?? []).join(", "));
-    setObservacoes(paciente.observacoes ?? "");
-    setReady(true);
+    setForm({
+      nome: paciente.nome ?? "",
+      apelido: paciente.apelido ?? "",
+      data_nascimento: paciente.data_nascimento ?? "",
+      tipo_sanguineo: paciente.tipo_sanguineo ?? "",
+      peso_kg: paciente.peso_kg?.toString() ?? "",
+      altura_cm: paciente.altura_cm?.toString() ?? "",
+      plano_saude: paciente.plano_saude ?? "",
+      numero_carteirinha: paciente.numero_carteirinha ?? "",
+      condicoes_cronicas: paciente.condicoes_cronicas?.join(", ") ?? "",
+      alergias: paciente.alergias?.join(", ") ?? "",
+      observacoes: paciente.observacoes ?? "",
+    });
   }, [paciente]);
+
+  function set(field: string, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!nome.trim()) { addToast("Nome é obrigatório", "warning"); return; }
+    if (!form.nome.trim()) {
+      addToast("Nome é obrigatório", "error");
+      return;
+    }
     setSaving(true);
     try {
-      const alergias = alergiasTexto.trim() ? alergiasTexto.split(",").map((s) => s.trim()).filter(Boolean) : null;
-      const condicoes = condicoesTexto.trim() ? condicoesTexto.split(",").map((s) => s.trim()).filter(Boolean) : null;
-      await updatePaciente(id, {
-        nome: nome.trim(),
-        apelido: apelido.trim() || null,
-        data_nascimento: dataNascimento || null,
-        tipo_sanguineo: tipoSanguineo || null,
-        peso_kg: pesoKg ? parseFloat(pesoKg) : null,
-        altura_cm: alturaCm ? parseInt(alturaCm) : null,
-        plano_saude: planoSaude.trim() || null,
-        numero_carteirinha: numeroCarteirinha.trim() || null,
-        alergias,
-        condicoes_cronicas: condicoes,
-        observacoes: observacoes.trim() || null,
+      await update({
+        nome: form.nome.trim(),
+        apelido: form.apelido.trim() || null,
+        data_nascimento: form.data_nascimento || null,
+        tipo_sanguineo: form.tipo_sanguineo || null,
+        peso_kg: form.peso_kg ? parseFloat(form.peso_kg) : null,
+        altura_cm: form.altura_cm ? parseFloat(form.altura_cm) : null,
+        plano_saude: form.plano_saude.trim() || null,
+        numero_carteirinha: form.numero_carteirinha.trim() || null,
+        condicoes_cronicas: form.condicoes_cronicas
+          ? form.condicoes_cronicas.split(",").map((s) => s.trim()).filter(Boolean)
+          : null,
+        alergias: form.alergias
+          ? form.alergias.split(",").map((s) => s.trim()).filter(Boolean)
+          : null,
+        observacoes: form.observacoes.trim() || null,
       });
-      addToast("Perfil atualizado!", "success");
-      setTimeout(() => router.push(`/saude/${id}`), 600);
+      addToast("Dados salvos!", "success");
+      setTimeout(() => router.push(`/saude/${id}`), 800);
     } catch (err) {
       addToast(err instanceof Error ? err.message : "Erro ao salvar", "error");
       setSaving(false);
     }
   }
 
-  if (loading || !ready) {
-    return (
-      <>
-        <Header title="Editar perfil" color={COLOR} showBack />
-        <PageContainer>
-          <div className="flex flex-col gap-4">
-            <Skeleton variant="card" count={4} />
-          </div>
-        </PageContainer>
-      </>
-    );
-  }
+  const labelStyle: React.CSSProperties = {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "rgba(240,240,255,0.7)",
+    marginBottom: 4,
+    display: "block",
+  };
 
-  if (error) {
+  const selectStyle: React.CSSProperties = {
+    background: "rgba(255,255,255,0.07)",
+    border: "1.5px solid rgba(255,255,255,0.12)",
+    borderRadius: 14,
+    color: "#F0F0FF",
+    fontSize: 16,
+    minHeight: 52,
+    padding: "14px 16px",
+    width: "100%",
+    outline: "none",
+  };
+
+  const textareaStyle: React.CSSProperties = {
+    background: "rgba(255,255,255,0.07)",
+    border: "1.5px solid rgba(255,255,255,0.12)",
+    borderRadius: 14,
+    color: "#F0F0FF",
+    fontSize: 15,
+    padding: "14px 16px",
+    width: "100%",
+    outline: "none",
+    resize: "vertical",
+    minHeight: 80,
+  };
+
+  const sectionStyle: React.CSSProperties = {
+    background: "rgba(255,255,255,0.04)",
+    borderRadius: 16,
+    padding: 16,
+    border: "1px solid rgba(255,255,255,0.08)",
+  };
+
+  if (loading) {
     return (
       <>
-        <Header title="Editar perfil" color={COLOR} showBack />
+        <Header title="Editar paciente" color={COLOR} showBack />
         <PageContainer>
-          <p className="text-sm text-[#E53935] text-center py-8">{error}</p>
+          <div className="flex flex-col gap-3"><Skeleton variant="text" count={6} /></div>
         </PageContainer>
       </>
     );
@@ -106,97 +143,54 @@ export default function EditarPacientePage({ params }: { params: Promise<{ id: s
   return (
     <>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
-      <Header title="Editar perfil de saúde" color={COLOR} showBack />
-
+      <Header title="Editar paciente" color={COLOR} showBack />
       <PageContainer>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          {/* Identificação */}
-          <div className="bg-white rounded-[16px] border border-[#E0E0E0] p-5 flex flex-col gap-4">
-            <p className="text-xs font-700 text-[#666666] uppercase tracking-wide">Identificação</p>
-            <Input label="Nome completo *" placeholder="Nome do paciente" value={nome}
-              onChange={(e) => setNome(e.target.value)} />
-            <Input label="Apelido" placeholder="Como é chamado" value={apelido}
-              onChange={(e) => setApelido(e.target.value)} />
-            <Input label="Data de nascimento" type="date" value={dataNascimento}
-              onChange={(e) => setDataNascimento(e.target.value)} />
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div style={sectionStyle} className="flex flex-col gap-3">
+            <p style={{ fontSize: 12, fontWeight: 700, color: COLOR, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              Dados básicos
+            </p>
+            <Input label="Nome completo *" value={form.nome} onChange={(e) => set("nome", e.target.value)} accentColor={COLOR} />
+            <Input label="Apelido" value={form.apelido} onChange={(e) => set("apelido", e.target.value)} accentColor={COLOR} />
+            <Input label="Data de nascimento" type="date" value={form.data_nascimento} onChange={(e) => set("data_nascimento", e.target.value)} accentColor={COLOR} />
           </div>
 
-          {/* Dados físicos */}
-          <div className="bg-white rounded-[16px] border border-[#E0E0E0] p-5 flex flex-col gap-4">
-            <p className="text-xs font-700 text-[#666666] uppercase tracking-wide">Dados físicos</p>
+          <div style={sectionStyle} className="flex flex-col gap-3">
+            <p style={{ fontSize: 12, fontWeight: 700, color: COLOR, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              Dados médicos
+            </p>
             <div>
-              <p className="text-sm font-600 text-[#333333] mb-2">Tipo sanguíneo</p>
-              <div className="flex flex-wrap gap-2">
-                {TIPOS_SANGUINEOS.map((t) => (
-                  <button key={t} type="button"
-                    onClick={() => setTipoSanguineo(tipoSanguineo === t ? "" : t)}
-                    className="px-4 py-2 rounded-[10px] border text-sm font-700 transition-all"
-                    style={{
-                      borderColor: tipoSanguineo === t ? COLOR : "#E0E0E0",
-                      backgroundColor: tipoSanguineo === t ? `${COLOR}15` : "transparent",
-                      color: tipoSanguineo === t ? COLOR : "#666666",
-                    }}>
-                    {t}
-                  </button>
-                ))}
-              </div>
+              <label style={labelStyle}>Tipo sanguíneo</label>
+              <select style={selectStyle} value={form.tipo_sanguineo} onChange={(e) => set("tipo_sanguineo", e.target.value)}>
+                <option value="">Não informado</option>
+                {TIPOS_SANGUINEOS.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
             </div>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <Input label="Peso (kg)" type="number" placeholder="70" value={pesoKg}
-                  onChange={(e) => setPesoKg(e.target.value)} />
-              </div>
-              <div className="flex-1">
-                <Input label="Altura (cm)" type="number" placeholder="170" value={alturaCm}
-                  onChange={(e) => setAlturaCm(e.target.value)} />
-              </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="Peso (kg)" type="number" value={form.peso_kg} onChange={(e) => set("peso_kg", e.target.value)} accentColor={COLOR} />
+              <Input label="Altura (cm)" type="number" value={form.altura_cm} onChange={(e) => set("altura_cm", e.target.value)} accentColor={COLOR} />
+            </div>
+            <div>
+              <label style={labelStyle}>Condições crônicas (separadas por vírgula)</label>
+              <textarea style={textareaStyle} value={form.condicoes_cronicas} onChange={(e) => set("condicoes_cronicas", e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>Alergias (separadas por vírgula)</label>
+              <textarea style={textareaStyle} value={form.alergias} onChange={(e) => set("alergias", e.target.value)} />
             </div>
           </div>
 
-          {/* Plano de saúde */}
-          <div className="bg-white rounded-[16px] border border-[#E0E0E0] p-5 flex flex-col gap-4">
-            <p className="text-xs font-700 text-[#666666] uppercase tracking-wide">Plano de saúde</p>
-            <Input label="Operadora" placeholder="Unimed, Bradesco Saúde..." value={planoSaude}
-              onChange={(e) => setPlanoSaude(e.target.value)} />
-            <Input label="Número da carteirinha" placeholder="0000.0000.0000.0000" value={numeroCarteirinha}
-              onChange={(e) => setNumeroCarteirinha(e.target.value)} />
+          <div style={sectionStyle} className="flex flex-col gap-3">
+            <p style={{ fontSize: 12, fontWeight: 700, color: COLOR, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              Plano de saúde
+            </p>
+            <Input label="Nome do plano" value={form.plano_saude} onChange={(e) => set("plano_saude", e.target.value)} accentColor={COLOR} />
+            <Input label="Número da carteirinha" value={form.numero_carteirinha} onChange={(e) => set("numero_carteirinha", e.target.value)} accentColor={COLOR} />
           </div>
 
-          {/* Histórico */}
-          <div className="bg-white rounded-[16px] border border-[#E0E0E0] p-5 flex flex-col gap-4">
-            <p className="text-xs font-700 text-[#666666] uppercase tracking-wide">Histórico médico</p>
-            <div>
-              <label className="block text-sm font-600 text-[#333333] mb-1">Alergias</label>
-              <p className="text-xs text-[#999999] mb-2">Separe por vírgula: penicilina, amendoim...</p>
-              <textarea
-                value={alergiasTexto}
-                onChange={(e) => setAlergiasTexto(e.target.value)}
-                placeholder="penicilina, amendoim, látex..."
-                rows={2}
-                className="w-full rounded-[10px] border border-[#E0E0E0] px-3 py-2.5 text-sm text-[#333333] bg-white outline-none focus:border-[#00ACC1] resize-none font-[inherit]"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-600 text-[#333333] mb-1">Condições crônicas</label>
-              <p className="text-xs text-[#999999] mb-2">Separe por vírgula: diabetes, hipertensão...</p>
-              <textarea
-                value={condicoesTexto}
-                onChange={(e) => setCondicoesTexto(e.target.value)}
-                placeholder="diabetes tipo 2, hipertensão..."
-                rows={2}
-                className="w-full rounded-[10px] border border-[#E0E0E0] px-3 py-2.5 text-sm text-[#333333] bg-white outline-none focus:border-[#00ACC1] resize-none font-[inherit]"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-600 text-[#333333] mb-1">Observações</label>
-              <textarea
-                value={observacoes}
-                onChange={(e) => setObservacoes(e.target.value)}
-                placeholder="Informações adicionais..."
-                rows={3}
-                className="w-full rounded-[10px] border border-[#E0E0E0] px-3 py-2.5 text-sm text-[#333333] bg-white outline-none focus:border-[#00ACC1] resize-none font-[inherit]"
-              />
-            </div>
+          <div style={sectionStyle}>
+            <label style={labelStyle}>Observações gerais</label>
+            <textarea style={textareaStyle} value={form.observacoes} onChange={(e) => set("observacoes", e.target.value)} />
           </div>
 
           <Button type="submit" fullWidth loading={saving} style={{ backgroundColor: COLOR }}>

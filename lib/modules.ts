@@ -9,7 +9,7 @@ import {
   PawPrint,
   Car,
   ClipboardList,
-  Heart,
+  HeartPulse,
 } from "lucide-react";
 import type { ModuleConfig } from "@/types/ui";
 
@@ -88,6 +88,15 @@ export const MODULES: ModuleConfig[] = [
     description: "Recados e tarefas da família",
   },
   {
+    id: "saude",
+    label: "Saúde",
+    color: "#E91E63",
+    textColor: "#FFFFFF",
+    icon: HeartPulse,
+    href: "/saude",
+    description: "Saúde da família",
+  },
+  {
     id: "veiculos",
     label: "Veículos",
     color: "#F57C00",
@@ -95,15 +104,6 @@ export const MODULES: ModuleConfig[] = [
     icon: Car,
     href: "/veiculos",
     description: "Seus veículos",
-  },
-  {
-    id: "saude",
-    label: "Saúde",
-    color: "#00ACC1",
-    textColor: "#FFFFFF",
-    icon: Heart,
-    href: "/saude",
-    description: "Saúde da família",
   },
   {
     id: "config",

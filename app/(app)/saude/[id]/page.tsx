@@ -2,521 +2,335 @@
 
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import {
-  Edit, Trash2, Pill, Calendar, Activity, Phone,
-  Plus, ChevronDown, ChevronUp, Check, X as XIcon,
+  Edit2, Pill, Calendar, Hospital, Activity, Phone, ChevronRight,
+  AlertCircle, Shield, Droplets, Ruler, Weight, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Modal } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ToastContainer } from "@/components/ui/Toast";
+import { usePaciente, useMedicamentos, useConsultas, useInternacoes, useSinaisVitais } from "@/hooks/useSaude";
 import { useToast } from "@/hooks/useToast";
-import { usePaciente, usePacientes } from "@/hooks/useSaude";
-import type { SaudeConsultaTipo } from "@/types/database";
 
-const COLOR = "#00ACC1";
+const COLOR = "#E91E63";
 
-function formatDate(iso: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+function calcIdade(dataNascimento: string | null): string | null {
+  if (!dataNascimento) return null;
+  const nasc = new Date(dataNascimento + "T12:00:00");
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - nasc.getFullYear();
+  const m = hoje.getMonth() - nasc.getMonth();
+  if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+  return `${idade} anos`;
 }
-function formatDatetime(iso: string | null) {
+
+function formatDate(iso: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const d = new Date(iso.includes("T") ? iso : iso + "T12:00:00");
+  return d.toLocaleDateString("pt-BR");
 }
 
-type Tab = "medicamentos" | "consultas" | "vitais" | "contatos";
+function Section({ title, icon: Icon, children, color = COLOR, defaultOpen = true }: {
+  title: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+  color?: string;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)" }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between p-4"
+      >
+        <div className="flex items-center gap-2">
+          <Icon size={18} style={{ color }} />
+          <span style={{ fontSize: 15, fontWeight: 700, color: "rgba(240,240,255,0.9)" }}>{title}</span>
+        </div>
+        {open ? <ChevronUp size={16} style={{ color: "rgba(240,240,255,0.4)" }} /> : <ChevronDown size={16} style={{ color: "rgba(240,240,255,0.4)" }} />}
+      </button>
+      {open && <div className="px-4 pb-4">{children}</div>}
+    </div>
+  );
+}
 
-export default function DetalhesPacientePage({ params }: { params: Promise<{ id: string }> }) {
+function QuickAccessButton({ href, icon: Icon, label, count, alert }: {
+  href: string; icon: React.ElementType; label: string; count?: number; alert?: boolean;
+}) {
+  const router = useRouter();
+  return (
+    <button
+      onClick={() => router.push(href)}
+      className="flex items-center gap-3 w-full p-3 rounded-[12px] hover:bg-white/5 transition-colors"
+      style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+    >
+      <div className="w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0"
+        style={{ backgroundColor: alert ? "#FFEBEE" : `${COLOR}20` }}>
+        <Icon size={18} style={{ color: alert ? "#E53935" : COLOR }} />
+      </div>
+      <span className="flex-1 text-left text-sm font-semibold" style={{ color: "rgba(240,240,255,0.85)" }}>{label}</span>
+      <div className="flex items-center gap-1.5">
+        {count !== undefined && count > 0 && (
+          <span className="text-xs font-bold px-1.5 py-0.5 rounded-full"
+            style={{ backgroundColor: alert ? "#FFEBEE" : `${COLOR}20`, color: alert ? "#E53935" : COLOR }}>
+            {count}
+          </span>
+        )}
+        <ChevronRight size={16} style={{ color: "rgba(240,240,255,0.3)" }} />
+      </div>
+    </button>
+  );
+}
+
+export default function PacientePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const {
-    paciente, medicamentos, consultas, sinaisVitais, contatos,
-    loading, error, refetch,
-    addMedicamento, updateMedicamento, deleteMedicamento,
-    addConsulta, deleteConsulta,
-    addSinalVital,
-  } = usePaciente(id);
-  const { deletePaciente } = usePacientes();
-  const { toasts, addToast, removeToast } = useToast();
+  const { toasts, removeToast } = useToast();
+  const { paciente, loading } = usePaciente(id);
+  const { medicamentos, ativos } = useMedicamentos(id);
+  const { proximas } = useConsultas(id);
+  const { emCurso } = useInternacoes(id);
+  const { sinais } = useSinaisVitais(id);
 
-  const [tab, setTab] = useState<Tab>("medicamentos");
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const estoquesBaixos = ativos.filter(
+    (m) => m.estoque_atual !== null && m.estoque_minimo !== null && m.estoque_atual <= m.estoque_minimo
+  );
 
-  // Modal — novo medicamento
-  const [medModal, setMedModal] = useState(false);
-  const [medNome, setMedNome] = useState("");
-  const [medDose, setMedDose] = useState("");
-  const [medFreq, setMedFreq] = useState("");
-  const [medContínuo, setMedContinuo] = useState(false);
-  const [savingMed, setSavingMed] = useState(false);
+  const ultimoSinal = sinais[0] ?? null;
 
-  // Modal — nova consulta
-  const [consModal, setConsModal] = useState(false);
-  const [consTipo, setConsTipo] = useState<SaudeConsultaTipo>("consulta");
-  const [consEsp, setConsEsp] = useState("");
-  const [consMedico, setConsMedico] = useState("");
-  const [consLocal, setConsLocal] = useState("");
-  const [consData, setConsData] = useState("");
-  const [savingCons, setSavingCons] = useState(false);
-
-  // Modal — sinal vital
-  const [svModal, setSvModal] = useState(false);
-  const [svPressS, setSvPressS] = useState("");
-  const [svPressD, setSvPressD] = useState("");
-  const [svFC, setSvFC] = useState("");
-  const [svGlic, setSvGlic] = useState("");
-  const [svSat, setSvSat] = useState("");
-  const [svTemp, setSvTemp] = useState("");
-  const [savingSv, setSavingSv] = useState(false);
-
-  async function handleDelete() {
-    setDeleting(true);
-    try {
-      await deletePaciente(id);
-      addToast("Perfil excluído", "success");
-      setTimeout(() => router.push("/saude"), 600);
-    } catch {
-      addToast("Erro ao excluir", "error");
-      setDeleting(false);
-    }
+  if (loading) {
+    return (
+      <>
+        <Header title="Carregando..." color={COLOR} showBack />
+        <PageContainer>
+          <div className="flex flex-col gap-3"><Skeleton variant="text" count={6} /></div>
+        </PageContainer>
+      </>
+    );
   }
 
-  async function handleAddMed(e: React.FormEvent) {
-    e.preventDefault();
-    if (!medNome.trim()) return;
-    setSavingMed(true);
-    try {
-      await addMedicamento({
-        nome: medNome.trim(), principio_ativo: null,
-        dose: medDose.trim() || null, unidade: null,
-        frequencia: medFreq.trim() || null, horarios: null,
-        estoque_atual: null, estoque_minimo: 5,
-        data_inicio: null, data_fim: null,
-        medico_prescreveu: null,
-        uso_continuo: medContínuo, ativo: true, observacoes: null,
-      });
-      addToast("Medicamento adicionado!", "success");
-      setMedNome(""); setMedDose(""); setMedFreq(""); setMedContinuo(false);
-      setMedModal(false);
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : "Erro ao salvar", "error");
-    } finally { setSavingMed(false); }
+  if (!paciente) {
+    return (
+      <>
+        <Header title="Paciente" color={COLOR} showBack />
+        <PageContainer>
+          <p className="text-center py-12" style={{ color: "rgba(240,240,255,0.5)" }}>Paciente não encontrado.</p>
+        </PageContainer>
+      </>
+    );
   }
 
-  async function handleAddCons(e: React.FormEvent) {
-    e.preventDefault();
-    setSavingCons(true);
-    try {
-      await addConsulta({
-        tipo: consTipo, especialidade: consEsp.trim() || null,
-        medico: consMedico.trim() || null, local: consLocal.trim() || null,
-        data_hora: consData || null, resultado: null, anexo_url: null, observacoes: null,
-      });
-      addToast("Consulta adicionada!", "success");
-      setConsEsp(""); setConsMedico(""); setConsLocal(""); setConsData("");
-      setConsModal(false);
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : "Erro ao salvar", "error");
-    } finally { setSavingCons(false); }
-  }
-
-  async function handleAddSv(e: React.FormEvent) {
-    e.preventDefault();
-    setSavingSv(true);
-    try {
-      await addSinalVital({
-        data_hora: new Date().toISOString(),
-        pressao_sistolica: svPressS ? parseInt(svPressS) : null,
-        pressao_diastolica: svPressD ? parseInt(svPressD) : null,
-        frequencia_cardiaca: svFC ? parseInt(svFC) : null,
-        glicemia: svGlic ? parseFloat(svGlic) : null,
-        saturacao_o2: svSat ? parseFloat(svSat) : null,
-        peso_kg: null, temperatura: svTemp ? parseFloat(svTemp) : null,
-        observacao: null,
-      });
-      addToast("Registro salvo!", "success");
-      setSvPressS(""); setSvPressD(""); setSvFC(""); setSvGlic(""); setSvSat(""); setSvTemp("");
-      setSvModal(false);
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : "Erro ao salvar", "error");
-    } finally { setSavingSv(false); }
-  }
-
-  const TABS: { key: Tab; label: string; icon: typeof Pill; count: number }[] = [
-    { key: "medicamentos", label: "Remédios", icon: Pill, count: medicamentos.length },
-    { key: "consultas", label: "Consultas", icon: Calendar, count: consultas.length },
-    { key: "vitais", label: "Sinais", icon: Activity, count: sinaisVitais.length },
-    { key: "contatos", label: "Contatos", icon: Phone, count: contatos.length },
-  ];
+  const idade = calcIdade(paciente.data_nascimento);
 
   return (
     <>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
-
       <Header
-        title={paciente?.nome ?? "Saúde"}
+        title={paciente.apelido ?? paciente.nome}
         color={COLOR}
         showBack
-        actions={paciente && (
-          <button onClick={() => router.push(`/saude/${id}/editar`)} aria-label="Editar"
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors text-white">
-            <Edit size={20} />
+        actions={
+          <button
+            onClick={() => router.push(`/saude/${id}/editar`)}
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors text-white"
+          >
+            <Edit2 size={18} />
           </button>
-        )}
+        }
       />
 
       <PageContainer>
-        {loading && <Skeleton variant="card" count={4} />}
-        {!loading && error && <p className="text-sm text-[#E53935] text-center py-8">{error}</p>}
+        <div className="flex flex-col gap-4">
+          {/* Alerta de internação em curso */}
+          {emCurso && (
+            <div className="flex items-start gap-3 p-3 rounded-[12px]" style={{ backgroundColor: "#FFEBEE" }}>
+              <Hospital size={18} className="mt-0.5 flex-shrink-0" style={{ color: "#E53935" }} />
+              <div>
+                <p className="text-sm font-bold text-[#E53935]">Internado</p>
+                <p className="text-xs text-[#C62828]">
+                  {emCurso.hospital ?? "Hospital"} · desde {formatDate(emCurso.data_entrada)}
+                </p>
+              </div>
+            </div>
+          )}
 
-        {!loading && !error && paciente && (
-          <div className="flex flex-col gap-4">
-            {/* Card resumo */}
-            <div className="bg-white rounded-[16px] border border-[#E0E0E0] p-5">
-              <div className="flex gap-4 items-start">
-                <div className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-800 text-white flex-shrink-0"
-                  style={{ background: `linear-gradient(135deg, ${COLOR}, #00838F)` }}>
-                  {paciente.nome.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase()}
+          {/* Alerta de estoque baixo */}
+          {estoquesBaixos.length > 0 && (
+            <div className="flex items-start gap-3 p-3 rounded-[12px]" style={{ backgroundColor: "#FFEBEE" }}>
+              <AlertCircle size={18} className="mt-0.5 flex-shrink-0" style={{ color: "#E53935" }} />
+              <div>
+                <p className="text-sm font-bold text-[#E53935]">Estoque baixo</p>
+                <p className="text-xs text-[#C62828]">{estoquesBaixos.map((m) => m.nome).join(", ")}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Dados básicos */}
+          <Section title="Dados pessoais" icon={Shield}>
+            <div className="grid grid-cols-2 gap-3">
+              {idade && (
+                <div className="p-3 rounded-[12px]" style={{ background: "rgba(255,255,255,0.05)" }}>
+                  <p className="text-[11px] font-semibold" style={{ color: "rgba(240,240,255,0.5)" }}>IDADE</p>
+                  <p className="text-base font-bold mt-0.5" style={{ color: "rgba(240,240,255,0.9)" }}>{idade}</p>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-800 text-[#333333] text-lg leading-snug">{paciente.nome}</p>
-                  {paciente.apelido && <p className="text-sm text-[#666666]">{paciente.apelido}</p>}
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {paciente.tipo_sanguineo && (
-                      <span className="text-xs font-800 px-2.5 py-1 rounded-full text-white" style={{ backgroundColor: "#E53935" }}>
-                        {paciente.tipo_sanguineo}
-                      </span>
-                    )}
-                    {paciente.plano_saude && (
-                      <span className="text-xs font-600 px-2.5 py-1 rounded-full" style={{ backgroundColor: `${COLOR}15`, color: COLOR }}>
-                        {paciente.plano_saude}
-                      </span>
-                    )}
+              )}
+              {paciente.tipo_sanguineo && (
+                <div className="p-3 rounded-[12px]" style={{ background: "rgba(255,255,255,0.05)" }}>
+                  <div className="flex items-center gap-1 mb-0.5">
+                    <Droplets size={11} style={{ color: "#E53935" }} />
+                    <p className="text-[11px] font-semibold" style={{ color: "rgba(240,240,255,0.5)" }}>TIPO SANG.</p>
                   </div>
+                  <p className="text-base font-bold" style={{ color: "#E53935" }}>{paciente.tipo_sanguineo}</p>
+                </div>
+              )}
+              {paciente.peso_kg && (
+                <div className="p-3 rounded-[12px]" style={{ background: "rgba(255,255,255,0.05)" }}>
+                  <div className="flex items-center gap-1 mb-0.5">
+                    <Weight size={11} style={{ color: COLOR }} />
+                    <p className="text-[11px] font-semibold" style={{ color: "rgba(240,240,255,0.5)" }}>PESO</p>
+                  </div>
+                  <p className="text-base font-bold" style={{ color: "rgba(240,240,255,0.9)" }}>{paciente.peso_kg} kg</p>
+                </div>
+              )}
+              {paciente.altura_cm && (
+                <div className="p-3 rounded-[12px]" style={{ background: "rgba(255,255,255,0.05)" }}>
+                  <div className="flex items-center gap-1 mb-0.5">
+                    <Ruler size={11} style={{ color: COLOR }} />
+                    <p className="text-[11px] font-semibold" style={{ color: "rgba(240,240,255,0.5)" }}>ALTURA</p>
+                  </div>
+                  <p className="text-base font-bold" style={{ color: "rgba(240,240,255,0.9)" }}>{paciente.altura_cm} cm</p>
+                </div>
+              )}
+            </div>
+
+            {paciente.condicoes_cronicas && paciente.condicoes_cronicas.length > 0 && (
+              <div className="mt-3">
+                <p className="text-[11px] font-semibold mb-1.5" style={{ color: "rgba(240,240,255,0.5)" }}>CONDIÇÕES CRÔNICAS</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {paciente.condicoes_cronicas.map((c) => (
+                    <span key={c} className="text-xs px-2.5 py-1 rounded-full font-semibold"
+                      style={{ backgroundColor: "#FFF3E0", color: "#E65100" }}>
+                      {c}
+                    </span>
+                  ))}
                 </div>
               </div>
+            )}
 
-              {/* Alergias */}
-              {paciente.alergias && paciente.alergias.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-[#F0F0F0]">
-                  <p className="text-xs font-700 text-[#E53935] uppercase tracking-wide mb-1.5">⚠ Alergias</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {paciente.alergias.map((a) => (
-                      <span key={a} className="text-xs px-2.5 py-1 rounded-full font-600"
-                        style={{ backgroundColor: "#FFEBEE", color: "#C62828" }}>
-                        {a}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Condições */}
-              {paciente.condicoes_cronicas && paciente.condicoes_cronicas.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-[#F0F0F0]">
-                  <p className="text-xs font-700 text-[#666666] uppercase tracking-wide mb-1.5">Condições crônicas</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {paciente.condicoes_cronicas.map((c) => (
-                      <span key={c} className="text-xs px-2.5 py-1 rounded-full font-600"
-                        style={{ backgroundColor: "#FFF3E0", color: "#E65100" }}>
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Tabs */}
-            <div className="flex gap-1 bg-[#F5F5F5] p-1 rounded-[14px]">
-              {TABS.map(({ key, label, icon: Icon, count }) => (
-                <button key={key} onClick={() => setTab(key)}
-                  className="flex-1 flex flex-col items-center gap-0.5 py-2 rounded-[10px] transition-all"
-                  style={{
-                    backgroundColor: tab === key ? "#FFFFFF" : "transparent",
-                    color: tab === key ? COLOR : "#999999",
-                    boxShadow: tab === key ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
-                  }}>
-                  <Icon size={18} />
-                  <span className="text-[10px] font-700">{label}</span>
-                  {count > 0 && (
-                    <span className="text-[9px] font-800" style={{ color: tab === key ? COLOR : "#BDBDBD" }}>
-                      {count}
+            {paciente.alergias && paciente.alergias.length > 0 && (
+              <div className="mt-3">
+                <p className="text-[11px] font-semibold mb-1.5" style={{ color: "rgba(240,240,255,0.5)" }}>ALERGIAS</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {paciente.alergias.map((a) => (
+                    <span key={a} className="text-xs px-2.5 py-1 rounded-full font-semibold"
+                      style={{ backgroundColor: "#FFEBEE", color: "#C62828" }}>
+                      {a}
                     </span>
-                  )}
-                </button>
-              ))}
-            </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-            {/* Tab content */}
-            <AnimatePresence mode="wait">
-              <motion.div key={tab}
-                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.15 }}>
+            {paciente.plano_saude && (
+              <div className="mt-3 p-3 rounded-[12px]" style={{ background: "rgba(255,255,255,0.05)" }}>
+                <p className="text-[11px] font-semibold" style={{ color: "rgba(240,240,255,0.5)" }}>PLANO DE SAÚDE</p>
+                <p className="text-sm font-semibold mt-0.5" style={{ color: "rgba(240,240,255,0.85)" }}>{paciente.plano_saude}</p>
+                {paciente.numero_carteirinha && (
+                  <p className="text-xs mt-0.5" style={{ color: "rgba(240,240,255,0.5)" }}>Carteirinha: {paciente.numero_carteirinha}</p>
+                )}
+              </div>
+            )}
+          </Section>
 
-                {/* MEDICAMENTOS */}
-                {tab === "medicamentos" && (
-                  <div className="flex flex-col gap-3">
-                    <Button fullWidth icon={Plus} onClick={() => setMedModal(true)}
-                      style={{ backgroundColor: COLOR }}>
-                      Adicionar medicamento
-                    </Button>
-                    {medicamentos.length === 0 && (
-                      <p className="text-sm text-[#999999] text-center py-6">Nenhum medicamento cadastrado</p>
-                    )}
-                    {medicamentos.map((m) => (
-                      <div key={m.id} className="bg-white rounded-[14px] border border-[#E0E0E0] p-4 flex gap-3 items-start">
-                        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                          style={{ backgroundColor: `${COLOR}15` }}>
-                          <Pill size={16} style={{ color: COLOR }} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="font-700 text-[#333333] text-sm">{m.nome}</p>
-                            <button onClick={async () => {
-                              try { await deleteMedicamento(m.id); addToast("Removido", "success"); }
-                              catch { addToast("Erro ao remover", "error"); }
-                            }} className="text-[#BDBDBD] hover:text-[#E53935] transition-colors flex-shrink-0">
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                          {m.dose && <p className="text-xs text-[#666666] mt-0.5">{m.dose}{m.unidade ? ` ${m.unidade}` : ""}</p>}
-                          {m.frequencia && <p className="text-xs text-[#666666]">{m.frequencia}</p>}
-                          {m.uso_continuo && (
-                            <span className="inline-block mt-1 text-[10px] font-700 px-2 py-0.5 rounded-full"
-                              style={{ backgroundColor: `${COLOR}15`, color: COLOR }}>
-                              Uso contínuo
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+          {/* Último sinal vital */}
+          {ultimoSinal && (
+            <Section title="Último sinal vital" icon={Activity} color="#4CAF50" defaultOpen={false}>
+              <p className="text-xs mb-2" style={{ color: "rgba(240,240,255,0.4)" }}>{formatDate(ultimoSinal.data_hora)}</p>
+              <div className="grid grid-cols-3 gap-2">
+                {ultimoSinal.pressao_sistolica && ultimoSinal.pressao_diastolica && (
+                  <div className="p-2 rounded-[10px] text-center" style={{ background: "rgba(255,255,255,0.05)" }}>
+                    <p className="text-[10px] font-semibold" style={{ color: "rgba(240,240,255,0.5)" }}>PRESSÃO</p>
+                    <p className="text-sm font-bold" style={{ color: "#4CAF50" }}>
+                      {ultimoSinal.pressao_sistolica}/{ultimoSinal.pressao_diastolica}
+                    </p>
                   </div>
                 )}
-
-                {/* CONSULTAS */}
-                {tab === "consultas" && (
-                  <div className="flex flex-col gap-3">
-                    <Button fullWidth icon={Plus} onClick={() => setConsModal(true)}
-                      style={{ backgroundColor: COLOR }}>
-                      Adicionar consulta / exame
-                    </Button>
-                    {consultas.length === 0 && (
-                      <p className="text-sm text-[#999999] text-center py-6">Nenhuma consulta registrada</p>
-                    )}
-                    {consultas.map((c) => (
-                      <div key={c.id} className="bg-white rounded-[14px] border border-[#E0E0E0] p-4">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="font-700 text-[#333333] text-sm">
-                              {c.tipo === "exame" ? "Exame" : c.tipo === "retorno" ? "Retorno" : "Consulta"}
-                              {c.especialidade ? ` — ${c.especialidade}` : ""}
-                            </p>
-                            {c.medico && <p className="text-xs text-[#666666] mt-0.5">Dr(a). {c.medico}</p>}
-                            {c.local && <p className="text-xs text-[#666666]">{c.local}</p>}
-                            {c.data_hora && (
-                              <p className="text-xs font-600 mt-1" style={{ color: COLOR }}>
-                                {formatDatetime(c.data_hora)}
-                              </p>
-                            )}
-                          </div>
-                          <button onClick={async () => {
-                            try { await deleteConsulta(c.id); addToast("Removida", "success"); }
-                            catch { addToast("Erro ao remover", "error"); }
-                          }} className="text-[#BDBDBD] hover:text-[#E53935] transition-colors flex-shrink-0">
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                {ultimoSinal.frequencia_cardiaca && (
+                  <div className="p-2 rounded-[10px] text-center" style={{ background: "rgba(255,255,255,0.05)" }}>
+                    <p className="text-[10px] font-semibold" style={{ color: "rgba(240,240,255,0.5)" }}>BPM</p>
+                    <p className="text-sm font-bold" style={{ color: "#4CAF50" }}>{ultimoSinal.frequencia_cardiaca}</p>
                   </div>
                 )}
-
-                {/* SINAIS VITAIS */}
-                {tab === "vitais" && (
-                  <div className="flex flex-col gap-3">
-                    <Button fullWidth icon={Plus} onClick={() => setSvModal(true)}
-                      style={{ backgroundColor: COLOR }}>
-                      Registrar sinais vitais
-                    </Button>
-                    {sinaisVitais.length === 0 && (
-                      <p className="text-sm text-[#999999] text-center py-6">Nenhum registro de sinais vitais</p>
-                    )}
-                    {sinaisVitais.map((sv) => (
-                      <div key={sv.id} className="bg-white rounded-[14px] border border-[#E0E0E0] p-4">
-                        <p className="text-xs font-600 text-[#999999] mb-2">{formatDatetime(sv.data_hora)}</p>
-                        <div className="grid grid-cols-3 gap-2">
-                          {sv.pressao_sistolica && sv.pressao_diastolica && (
-                            <div className="text-center">
-                              <p className="text-[10px] text-[#666666]">Pressão</p>
-                              <p className="text-sm font-800 text-[#E53935]">{sv.pressao_sistolica}/{sv.pressao_diastolica}</p>
-                            </div>
-                          )}
-                          {sv.frequencia_cardiaca && (
-                            <div className="text-center">
-                              <p className="text-[10px] text-[#666666]">BPM</p>
-                              <p className="text-sm font-800 text-[#E91E63]">{sv.frequencia_cardiaca}</p>
-                            </div>
-                          )}
-                          {sv.glicemia && (
-                            <div className="text-center">
-                              <p className="text-[10px] text-[#666666]">Glicemia</p>
-                              <p className="text-sm font-800 text-[#F57C00]">{sv.glicemia}</p>
-                            </div>
-                          )}
-                          {sv.saturacao_o2 && (
-                            <div className="text-center">
-                              <p className="text-[10px] text-[#666666]">SpO₂</p>
-                              <p className="text-sm font-800" style={{ color: COLOR }}>{sv.saturacao_o2}%</p>
-                            </div>
-                          )}
-                          {sv.temperatura && (
-                            <div className="text-center">
-                              <p className="text-[10px] text-[#666666]">Temp</p>
-                              <p className="text-sm font-800 text-[#00897B]">{sv.temperatura}°C</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                {ultimoSinal.glicemia && (
+                  <div className="p-2 rounded-[10px] text-center" style={{ background: "rgba(255,255,255,0.05)" }}>
+                    <p className="text-[10px] font-semibold" style={{ color: "rgba(240,240,255,0.5)" }}>GLICEMIA</p>
+                    <p className="text-sm font-bold" style={{ color: "#4CAF50" }}>{ultimoSinal.glicemia}</p>
                   </div>
                 )}
-
-                {/* CONTATOS */}
-                {tab === "contatos" && (
-                  <div className="flex flex-col gap-3">
-                    {contatos.length === 0 && (
-                      <p className="text-sm text-[#999999] text-center py-6">Nenhum contato de emergência</p>
-                    )}
-                    {contatos.map((c) => (
-                      <div key={c.id} className="bg-white rounded-[14px] border border-[#E0E0E0] p-4 flex gap-3 items-center">
-                        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                          style={{ backgroundColor: "#FFF3E0" }}>
-                          <Phone size={16} className="text-[#F57C00]" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-700 text-[#333333] text-sm">{c.nome}</p>
-                          {c.relacao && <p className="text-xs text-[#666666]">{c.relacao}</p>}
-                          <a href={`tel:${c.telefone}`} className="text-sm font-700 mt-0.5 block"
-                            style={{ color: COLOR }}>{c.telefone}</a>
-                        </div>
-                      </div>
-                    ))}
+                {ultimoSinal.saturacao_o2 && (
+                  <div className="p-2 rounded-[10px] text-center" style={{ background: "rgba(255,255,255,0.05)" }}>
+                    <p className="text-[10px] font-semibold" style={{ color: "rgba(240,240,255,0.5)" }}>SpO2</p>
+                    <p className="text-sm font-bold" style={{ color: "#4CAF50" }}>{ultimoSinal.saturacao_o2}%</p>
                   </div>
                 )}
-              </motion.div>
-            </AnimatePresence>
+                {ultimoSinal.temperatura && (
+                  <div className="p-2 rounded-[10px] text-center" style={{ background: "rgba(255,255,255,0.05)" }}>
+                    <p className="text-[10px] font-semibold" style={{ color: "rgba(240,240,255,0.5)" }}>TEMP.</p>
+                    <p className="text-sm font-bold" style={{ color: "#4CAF50" }}>{ultimoSinal.temperatura}°C</p>
+                  </div>
+                )}
+              </div>
+            </Section>
+          )}
 
-            {/* Excluir */}
-            <div className="pt-2">
-              <Button variant="danger" fullWidth icon={Trash2} onClick={() => setConfirmDelete(true)}>
-                Excluir perfil
-              </Button>
+          {/* Acesso rápido */}
+          <Section title="Acompanhamento" icon={ChevronRight} color={COLOR}>
+            <div className="flex flex-col gap-2">
+              <QuickAccessButton
+                href={`/saude/${id}/medicamentos`}
+                icon={Pill}
+                label="Medicamentos"
+                count={ativos.length}
+                alert={estoquesBaixos.length > 0}
+              />
+              <QuickAccessButton
+                href={`/saude/${id}/consultas`}
+                icon={Calendar}
+                label="Consultas"
+                count={proximas.length}
+              />
+              <QuickAccessButton
+                href={`/saude/${id}/internacoes`}
+                icon={Hospital}
+                label="Internações"
+                alert={!!emCurso}
+              />
+              <QuickAccessButton
+                href={`/saude/${id}/sinais`}
+                icon={Activity}
+                label="Sinais Vitais"
+                count={sinais.length}
+              />
+              <QuickAccessButton
+                href={`/saude/${id}/emergencia`}
+                icon={Phone}
+                label="Emergência"
+                alert={false}
+              />
             </div>
-          </div>
-        )}
-      </PageContainer>
+          </Section>
 
-      {/* Modal — medicamento */}
-      <Modal open={medModal} onClose={() => setMedModal(false)} title="Novo medicamento" size="sm">
-        <form onSubmit={handleAddMed} className="flex flex-col gap-4">
-          <Input label="Nome *" placeholder="Losartana, Metformina..." value={medNome}
-            onChange={(e) => setMedNome(e.target.value)} />
-          <Input label="Dose" placeholder="50mg, 500mg..." value={medDose}
-            onChange={(e) => setMedDose(e.target.value)} />
-          <Input label="Frequência" placeholder="1x ao dia, 2x ao dia..." value={medFreq}
-            onChange={(e) => setMedFreq(e.target.value)} />
-          <label className="flex items-center gap-3 cursor-pointer">
-            <div onClick={() => setMedContinuo(!medContínuo)}
-              className="w-12 h-6 rounded-full transition-colors flex items-center px-1"
-              style={{ backgroundColor: medContínuo ? COLOR : "#E0E0E0" }}>
-              <div className="w-4 h-4 bg-white rounded-full transition-transform"
-                style={{ transform: medContínuo ? "translateX(24px)" : "translateX(0)" }} />
+          {/* Observações */}
+          {paciente.observacoes && (
+            <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 16, padding: 16, border: "1px solid rgba(255,255,255,0.08)" }}>
+              <p className="text-[11px] font-semibold mb-2" style={{ color: "rgba(240,240,255,0.5)" }}>OBSERVAÇÕES</p>
+              <p className="text-sm" style={{ color: "rgba(240,240,255,0.7)", lineHeight: 1.6 }}>{paciente.observacoes}</p>
             </div>
-            <span className="text-sm font-600 text-[#333333]">Uso contínuo</span>
-          </label>
-          <Button type="submit" fullWidth loading={savingMed} style={{ backgroundColor: COLOR }}>
-            Adicionar
-          </Button>
-        </form>
-      </Modal>
-
-      {/* Modal — consulta */}
-      <Modal open={consModal} onClose={() => setConsModal(false)} title="Nova consulta / exame" size="sm">
-        <form onSubmit={handleAddCons} className="flex flex-col gap-4">
-          <div>
-            <p className="text-sm font-600 text-[#333333] mb-2">Tipo</p>
-            <div className="flex gap-2">
-              {(["consulta", "exame", "retorno"] as SaudeConsultaTipo[]).map((t) => (
-                <button key={t} type="button" onClick={() => setConsTipo(t)}
-                  className="flex-1 py-2 rounded-[10px] border text-sm font-600 transition-all capitalize"
-                  style={{
-                    borderColor: consTipo === t ? COLOR : "#E0E0E0",
-                    backgroundColor: consTipo === t ? `${COLOR}15` : "transparent",
-                    color: consTipo === t ? COLOR : "#666666",
-                  }}>
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-          <Input label="Especialidade" placeholder="Cardiologia, Endocrinologia..." value={consEsp}
-            onChange={(e) => setConsEsp(e.target.value)} />
-          <Input label="Médico" placeholder="Nome do médico" value={consMedico}
-            onChange={(e) => setConsMedico(e.target.value)} />
-          <Input label="Local / Hospital" placeholder="Hospital, clínica..." value={consLocal}
-            onChange={(e) => setConsLocal(e.target.value)} />
-          <Input label="Data e horário" type="datetime-local" value={consData}
-            onChange={(e) => setConsData(e.target.value)} />
-          <Button type="submit" fullWidth loading={savingCons} style={{ backgroundColor: COLOR }}>
-            Salvar
-          </Button>
-        </form>
-      </Modal>
-
-      {/* Modal — sinais vitais */}
-      <Modal open={svModal} onClose={() => setSvModal(false)} title="Sinais vitais" size="sm">
-        <form onSubmit={handleAddSv} className="flex flex-col gap-3">
-          <div className="flex gap-3">
-            <Input label="Pressão sistólica" placeholder="120" value={svPressS}
-              onChange={(e) => setSvPressS(e.target.value)} type="number" />
-            <Input label="Diastólica" placeholder="80" value={svPressD}
-              onChange={(e) => setSvPressD(e.target.value)} type="number" />
-          </div>
-          <Input label="Freq. cardíaca (BPM)" placeholder="70" value={svFC}
-            onChange={(e) => setSvFC(e.target.value)} type="number" />
-          <Input label="Glicemia (mg/dL)" placeholder="100" value={svGlic}
-            onChange={(e) => setSvGlic(e.target.value)} type="number" />
-          <Input label="Saturação O₂ (%)" placeholder="98" value={svSat}
-            onChange={(e) => setSvSat(e.target.value)} type="number" />
-          <Input label="Temperatura (°C)" placeholder="36.5" value={svTemp}
-            onChange={(e) => setSvTemp(e.target.value)} type="number" />
-          <Button type="submit" fullWidth loading={savingSv} style={{ backgroundColor: COLOR }}>
-            Registrar
-          </Button>
-        </form>
-      </Modal>
-
-      {/* Confirmar exclusão */}
-      <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Excluir perfil" size="sm">
-        <p className="text-[#666666] mb-6">
-          Excluir <strong>{paciente?.nome}</strong>? Todos os dados serão perdidos permanentemente.
-        </p>
-        <div className="flex flex-col gap-3">
-          <Button variant="danger" fullWidth loading={deleting} onClick={handleDelete}>
-            Sim, excluir tudo
-          </Button>
-          <Button variant="secondary" fullWidth onClick={() => setConfirmDelete(false)} disabled={deleting}>
-            Cancelar
-          </Button>
+          )}
         </div>
-      </Modal>
+      </PageContainer>
     </>
   );
 }

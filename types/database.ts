@@ -293,12 +293,10 @@ export interface SaudeDose {
   observacao: string | null;
 }
 
-export type SaudeConsultaTipo = 'consulta' | 'exame' | 'retorno';
-
 export interface SaudeConsulta {
   id: string;
   paciente_id: string;
-  tipo: SaudeConsultaTipo | null;
+  tipo: string | null;
   especialidade: string | null;
   medico: string | null;
   local: string | null;
@@ -325,7 +323,7 @@ export interface SaudeInternacao {
   created_at: string;
 }
 
-export interface SaudeSinalVital {
+export interface SaudeSinaisVitais {
   id: string;
   paciente_id: string;
   data_hora: string;

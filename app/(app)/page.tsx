@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MODULES } from "@/lib/modules";
 import { ModuleCard } from "@/components/modules/ModuleCard";
 
-const GRID_IDS = ["imoveis", "tarefas", "documentos", "contatos", "feiras", "contas", "familia", "pets", "veiculos"];
+const GRID_IDS = ["imoveis", "tarefas", "documentos", "contatos", "feiras", "contas", "familia", "pets", "saude", "veiculos"];
 
 async function getCounts(supabase: Awaited<ReturnType<typeof createClient>>) {
   const tables = ["imoveis", "documentos", "contatos", "feiras", "contas", "familia_membros", "pets", "veiculos"] as const;
